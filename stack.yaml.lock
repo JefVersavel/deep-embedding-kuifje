@@ -3,7 +3,14 @@
 # For more information, please see the documentation at:
 #   https://docs.haskellstack.org/en/stable/lock_files
 
-packages: []
+packages:
+- completed:
+    hackage: kuifje-0.1.2.0@sha256:65a628002c9fdaa1e4daf29690fa338c8d84b8027413140f6a544d11d8edce3c,1461
+    pantry-tree:
+      size: 545
+      sha256: aeb4fc50bd59f79c9e11c3a00c262d2d5e4c02653d4d872fa013d1ac94df8c5b
+  original:
+    hackage: kuifje-0.1.2.0
 snapshots:
 - completed:
     size: 532414
