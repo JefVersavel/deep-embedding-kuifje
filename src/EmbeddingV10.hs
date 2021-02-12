@@ -1,4 +1,4 @@
-module BasicLanguageCLEmbedding where
+module EmbeddingV10 where
 
 data S = S {first :: Int, second :: Int}
   deriving (Show)
@@ -93,4 +93,4 @@ example1 =
           # update (SetFirst (Sub First (Lit 1)))
       )
 
-test = eval example1 $ S 3 0
+testV10 = eval example1 $ S 3 0

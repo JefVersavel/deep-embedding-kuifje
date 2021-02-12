@@ -1,4 +1,4 @@
-module BasicEmbeddingV2 where
+module EmbeddingV11 where
 
 import qualified Data.Map as M
 import Data.Semigroup as Semi
@@ -96,6 +96,6 @@ example1 =
           <> update (Set "x" (Sub (Var "x") (Lit 1)))
       )
 
-testv2 = eval example1 start
+testV11 = eval example1 start
   where
     start = M.insert "x" 3 M.empty
