@@ -1,9 +1,11 @@
-module EmbeddingV11 where
+module EmbeddingV20 where
 
 import qualified Data.Map as M
 import Data.Semigroup as Semi
+import DistCalculations
+import Language.Kuifje.Distribution
 
-type S = M.Map String Int
+type S = M.Map String (Dist Int)
 
 data CL
   = Skip
@@ -32,29 +34,29 @@ data Arithmetic
 
 data StoreManipulation = Set String Arithmetic
 
-evalBL :: BL -> S -> Bool
-evalBL (E l r) s = evalArithmetic l s == evalArithmetic r s
-evalBL (G l r) s = evalArithmetic l s > evalArithmetic r s
-evalBL (GE l r) s = evalArithmetic l s >= evalArithmetic r s
-evalBL (L l r) s = evalArithmetic l s < evalArithmetic r s
-evalBL (LE l r) s = evalArithmetic l s <= evalArithmetic r s
-evalBL (And l r) s = evalBL l s && evalBL r s
-evalBL (Or l r) s = evalBL l s || evalBL r s
-evalBL (Not l) s = not $ evalBL l s
-evalBL Fls _ = False
-evalBL Tru _ = True
+evalBL :: BL -> S -> Dist Bool
+evalBL (E l r) s = evalArithmetic l s === evalArithmetic r s
+evalBL (G l r) s = evalArithmetic l s >>> evalArithmetic r s
+evalBL (GE l r) s = evalArithmetic l s >>>= evalArithmetic r s
+evalBL (L l r) s = evalArithmetic l s <<< evalArithmetic r s
+evalBL (LE l r) s = evalArithmetic l s <<<= evalArithmetic r s
+evalBL (And l r) s = evalBL l s &&& evalBL r s
+evalBL (Or l r) s = evalBL l s ||| evalBL r s
+evalBL (Not l) s = unary not $ evalBL l s
+evalBL Fls _ = point False
+evalBL Tru _ = point True
 
-evalArithmetic :: Arithmetic -> S -> Int
-evalArithmetic (Add l r) s = evalArithmetic l s + evalArithmetic r s
-evalArithmetic (Sub l r) s = evalArithmetic l s - evalArithmetic r s
-evalArithmetic (Mul l r) s = evalArithmetic l s * evalArithmetic r s
+evalArithmetic :: Arithmetic -> S -> Dist Int
+evalArithmetic (Add l r) s = evalArithmetic l s +++ evalArithmetic r s
+evalArithmetic (Sub l r) s = evalArithmetic l s ~~~ evalArithmetic r s
+evalArithmetic (Mul l r) s = evalArithmetic l s *** evalArithmetic r s
 evalArithmetic (Var name) s = case M.lookup name s of
   Just n -> n
   Nothing ->
     error
       ( "Variable " ++ show name ++ " is not defined."
       )
-evalArithmetic (Lit i) _ = i
+evalArithmetic (Lit i) _ = point i
 
 evalStoreManipulation :: StoreManipulation -> S -> S
 evalStoreManipulation (Set name value) s = M.insert name (evalArithmetic value s) s
@@ -77,7 +79,7 @@ cond c p q = If c p q skip
 while :: BL -> CL -> CL
 while c p = While c p skip
 
-f >>> g = g f
+f >>>> g = g f
 
 conditional :: BL -> (S -> S) -> (S -> S) -> S -> S
 conditional test trueEval falseEval s
@@ -86,10 +88,10 @@ conditional test trueEval falseEval s
 
 eval :: CL -> S -> S
 eval Skip s = s
-eval (Update storeMan rest) s = evalStoreManipulation storeMan s >>> eval rest
-eval (If test ifCL thenCL rest) s = conditional test (eval ifCL) (eval thenCL) s >>> eval rest
+eval (Update storeMan rest) s = evalStoreManipulation storeMan s >>>> eval rest
+eval (If test ifCL thenCL rest) s = conditional test (eval ifCL) (eval thenCL) s >>>> eval rest
 eval (While test whileCL rest) s =
-  conditional test (\s -> eval whileCL s >>> eval (While test whileCL rest)) (eval rest) s
+  conditional test (\s -> eval whileCL s >>>> eval (While test whileCL rest)) (eval rest) s
 
 example1 :: CL
 example1 =

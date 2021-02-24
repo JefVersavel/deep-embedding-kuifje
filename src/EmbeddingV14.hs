@@ -11,8 +11,7 @@ data CL
   | Update StoreManipulation CL
   | If BL CL CL CL
   | While BL CL CL
-  | ReturnI Arithmetic
-  | ReturnB BL
+  | Return Expression
 
 data Expression = Boolean BL | Integer Arithmetic
 
@@ -137,8 +136,7 @@ instance Semigroup CL where
   Update f p <> k = Update f (p <> k)
   If c p q r <> k = If c p q (r <> k)
   While c p q <> k = While c p (q <> k)
-  ReturnI a <> k = ReturnI a
-  ReturnB b <> k = ReturnB b
+  Return e <> k = Return e
 
 skip :: CL
 skip = Skip
@@ -177,12 +175,9 @@ eval (While test whileCL rest) =
       case result of
         Nothing -> eval (While test whileCL rest)
         Just r -> return $ Just r
-eval (ReturnI ari) = do
-  value <- evalArithmetic ari
-  return $ Just (I value)
-eval (ReturnB bool) = do
-  value <- evalBL bool
-  return $ Just (B value)
+eval (Return expr) = do
+  value <- evalExpression expr
+  return $ Just value
 
 int :: Int -> Expression
 int i = Integer $ Lit i
@@ -193,6 +188,12 @@ true = Boolean Tru
 false :: Expression
 false = Boolean Fls
 
+intVar :: String -> Expression
+intVar name = Integer $ VarI name
+
+boolVar :: String -> Expression
+boolVar name = Boolean $ VarB name
+
 example1 :: CL
 example1 =
   update (Set "y" (int 0))
@@ -202,7 +203,7 @@ example1 =
       ( update (Set "y" (Integer $ Add (VarI "y") (VarI "x")))
           <> update (Set "x" (Integer $ Sub (VarI "x") (Lit 1)))
       )
-    <> ReturnI (VarI "y")
+    <> Return (intVar "y")
 
 mainEval :: CL -> S -> (ReturnType, S)
 mainEval expr = runState (eval expr)

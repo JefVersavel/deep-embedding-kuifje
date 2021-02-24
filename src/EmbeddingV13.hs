@@ -1,4 +1,4 @@
-module BasicEmbeddingV4 where
+module EmbeddingV13 where
 
 import Control.Monad.State.Lazy
 import qualified Data.Map as M
@@ -172,6 +172,6 @@ example1 =
 mainEval :: CL -> S -> (ReturnType, S)
 mainEval expr = runState (eval expr)
 
-testv4 = mainEval example1 start
+testV13 = mainEval example1 start
   where
     start = M.insert "x" 6 M.empty

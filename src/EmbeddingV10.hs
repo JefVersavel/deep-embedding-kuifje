@@ -18,6 +18,8 @@ data BL
   | And BL BL
   | Or BL BL
   | Not BL
+  | Fls
+  | Tru
 
 data Arithmetic
   = Add Arithmetic Arithmetic
@@ -38,6 +40,8 @@ evalBL (LE l r) s = evalArithmetic l s <= evalArithmetic r s
 evalBL (And l r) s = evalBL l s && evalBL r s
 evalBL (Or l r) s = evalBL l s || evalBL r s
 evalBL (Not l) s = not $ evalBL l s
+evalBL Fls _ = False
+evalBL Tru _ = True
 
 evalArithmetic :: Arithmetic -> S -> Int
 evalArithmetic (Add l r) s = evalArithmetic l s + evalArithmetic r s
