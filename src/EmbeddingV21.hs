@@ -1,4 +1,4 @@
-module EmbeddingV20 where
+module EmbeddingV21 where
 
 import qualified Data.Map as M
 import Data.Maybe
@@ -117,6 +117,6 @@ example1 =
           <> update (ProbAdd (2 / 3) (Set "x" (Sub (Var "x") (Lit 1))) (Set "x" (Sub (Var "x") (Lit 2))))
       )
 
-testV20 = P.printDist $ eval example1 start
+testV21 = P.printDist $ eval example1 start
   where
     start = M.singleton "x" 3
