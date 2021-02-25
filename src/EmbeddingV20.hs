@@ -1,6 +1,7 @@
 module EmbeddingV20 where
 
 import qualified Data.Map as M
+import Data.Maybe
 import Data.Semigroup as Semi
 import DistCalculations
 import Language.Kuifje.Distribution
@@ -32,24 +33,34 @@ data Arithmetic
   | Var String
   | Lit Int
 
-data StoreManipulation = Set String Arithmetic
+data StoreManipulation = Set String Arithmetic | ProbAdd Prob StoreManipulation StoreManipulation
 
 evalBL :: BL -> S -> Dist Bool
-evalBL (E l r) s = evalArithmetic l s === evalArithmetic r s
-evalBL (G l r) s = evalArithmetic l s >>> evalArithmetic r s
-evalBL (GE l r) s = evalArithmetic l s >>>= evalArithmetic r s
-evalBL (L l r) s = evalArithmetic l s <<< evalArithmetic r s
-evalBL (LE l r) s = evalArithmetic l s <<<= evalArithmetic r s
-evalBL (And l r) s = evalBL l s &&& evalBL r s
-evalBL (Or l r) s = evalBL l s ||| evalBL r s
-evalBL (Not l) s = unary not $ evalBL l s
+evalBL (E l r) s = binaryDistMap (==) (evalArithmetic l s) (evalArithmetic r s)
+evalBL (G l r) s = binaryDistMap (>) (evalArithmetic l s) (evalArithmetic r s)
+evalBL (GE l r) s = binaryDistMap (>=) (evalArithmetic l s) (evalArithmetic r s)
+evalBL (L l r) s = binaryDistMap (<) (evalArithmetic l s) (evalArithmetic r s)
+evalBL (LE l r) s = binaryDistMap (<=) (evalArithmetic l s) (evalArithmetic r s)
+evalBL (And l r) s = binaryDistMap (&&) (evalBL l s) (evalBL r s)
+evalBL (Or l r) s = binaryDistMap (||) (evalBL l s) (evalBL r s)
+evalBL (Not l) s = unaryDistMap not $ evalBL l s
 evalBL Fls _ = point False
 evalBL Tru _ = point True
 
+completeBoolDist :: Dist Bool -> Dist Bool
+completeBoolDist d
+  | M.size (runD d) == 2 = d
+  | M.size (runD d) == 1 =
+    let dd = runD d
+     in case M.lookup False dd of
+          Nothing -> D $ M.insert False (1 - fromJust (M.lookup True dd)) dd
+          Just p -> D $ M.insert True (1 - p) dd
+  | otherwise = uniform [True, False]
+
 evalArithmetic :: Arithmetic -> S -> Dist Int
-evalArithmetic (Add l r) s = evalArithmetic l s +++ evalArithmetic r s
-evalArithmetic (Sub l r) s = evalArithmetic l s ~~~ evalArithmetic r s
-evalArithmetic (Mul l r) s = evalArithmetic l s *** evalArithmetic r s
+evalArithmetic (Add l r) s = binaryDistMap (+) (evalArithmetic l s) (evalArithmetic r s)
+evalArithmetic (Sub l r) s = binaryDistMap (-) (evalArithmetic l s) (evalArithmetic r s)
+evalArithmetic (Mul l r) s = binaryDistMap (*) (evalArithmetic l s) (evalArithmetic r s)
 evalArithmetic (Var name) s = case M.lookup name s of
   Just n -> n
   Nothing ->
@@ -60,6 +71,14 @@ evalArithmetic (Lit i) _ = point i
 
 evalStoreManipulation :: StoreManipulation -> S -> S
 evalStoreManipulation (Set name value) s = M.insert name (evalArithmetic value s) s
+evalStoreManipulation (ProbAdd p l r) s =
+  probStoreMerge
+    p
+    (evalStoreManipulation l s)
+    (evalStoreManipulation r s)
+
+probStoreMerge :: Prob -> S -> S -> S
+probStoreMerge p = M.unionWith (probAdd p)
 
 instance Semigroup CL where
   Skip <> k = k
@@ -82,9 +101,10 @@ while c p = While c p skip
 f >>>> g = g f
 
 conditional :: BL -> (S -> S) -> (S -> S) -> S -> S
-conditional test trueEval falseEval s
-  | evalBL test s = trueEval s
-  | otherwise = falseEval s
+conditional test trueEval falseEval s = probStoreMerge tru (trueEval s) (falseEval s)
+  where
+    testResults = runD $ completeBoolDist $ evalBL test s
+    tru = fromJust $ M.lookup True testResults
 
 eval :: CL -> S -> S
 eval Skip s = s
@@ -96,12 +116,14 @@ eval (While test whileCL rest) s =
 example1 :: CL
 example1 =
   update (Set "y" (Lit 0))
-    <> while
-      (G (Var "x") (Lit 0))
-      ( update (Set "y" (Add (Var "y") (Var "x")))
-          <> update (Set "x" (Sub (Var "x") (Lit 1)))
-      )
+    <> update (ProbAdd (1 / 2) (Set "x" (Lit 1)) (Set "x" (Lit 2)))
 
-testV11 = eval example1 start
+-- <> while
+--   (G (Var "x") (Lit 0))
+--   ( update (Set "y" (Add (Var "y") (Var "x")))
+--       <> update (Set "x" (Sub (Var "x") (Lit 1)))
+--   )
+
+testV20 = eval example1 start
   where
-    start = M.insert "x" 3 M.empty
+    start = M.insert "x" (uniform [3]) M.empty
