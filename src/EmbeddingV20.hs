@@ -50,16 +50,6 @@ evalBL Fls _ = point False
 evalBL Tru _ = point True
 evalBL (ProbBool p l r) s = probAdd p (evalBL l s) (evalBL r s)
 
-completeBoolDist :: Dist Bool -> Dist Bool
-completeBoolDist d
-  | M.size (runD d) == 2 = d
-  | M.size (runD d) == 1 =
-    let dd = runD d
-     in case M.lookup False dd of
-          Nothing -> D $ M.insert False (1 - fromJust (M.lookup True dd)) dd
-          Just p -> D $ M.insert True (1 - p) dd
-  | otherwise = uniform [True, False]
-
 evalArithmetic :: Arithmetic -> S -> Int
 evalArithmetic (Add l r) s = evalArithmetic l s + evalArithmetic r s
 evalArithmetic (Sub l r) s = evalArithmetic l s - evalArithmetic r s
