@@ -1,3 +1,5 @@
+{-# LANGUAGE TupleSections #-}
+
 module EmbeddingV20 where
 
 import qualified Data.Map as M
@@ -34,15 +36,16 @@ data Arithmetic
   | Mul Arithmetic Arithmetic
   | Var String
   | Lit Int
+  | ProbAri Prob Arithmetic Arithmetic
 
 data StoreManipulation = Set String Arithmetic | ProbAdd Prob StoreManipulation StoreManipulation
 
 evalBL :: BL -> S -> Dist Bool
-evalBL (E l r) s = point $ evalArithmetic l s == evalArithmetic r s
-evalBL (G l r) s = point $ evalArithmetic l s > evalArithmetic r s
-evalBL (GE l r) s = point $ evalArithmetic l s >= evalArithmetic r s
-evalBL (L l r) s = point $ evalArithmetic l s < evalArithmetic r s
-evalBL (LE l r) s = point $ evalArithmetic l s <= evalArithmetic r s
+evalBL (E l r) s = binaryDistMap (==) (evalArithmetic l s) (evalArithmetic r s)
+evalBL (G l r) s = binaryDistMap (>) (evalArithmetic l s) (evalArithmetic r s)
+evalBL (GE l r) s = binaryDistMap (>=) (evalArithmetic l s) (evalArithmetic r s)
+evalBL (L l r) s = binaryDistMap (<) (evalArithmetic l s) (evalArithmetic r s)
+evalBL (LE l r) s = binaryDistMap (<=) (evalArithmetic l s) (evalArithmetic r s)
 evalBL (And l r) s = binaryDistMap (&&) (evalBL l s) (evalBL r s)
 evalBL (Or l r) s = binaryDistMap (||) (evalBL l s) (evalBL r s)
 evalBL (Not l) s = unaryDistMap not $ evalBL l s
@@ -50,21 +53,27 @@ evalBL Fls _ = point False
 evalBL Tru _ = point True
 evalBL (ProbBool p l r) s = probAdd p (evalBL l s) (evalBL r s)
 
-evalArithmetic :: Arithmetic -> S -> Int
-evalArithmetic (Add l r) s = evalArithmetic l s + evalArithmetic r s
-evalArithmetic (Sub l r) s = evalArithmetic l s - evalArithmetic r s
-evalArithmetic (Mul l r) s = evalArithmetic l s * evalArithmetic r s
+evalArithmetic :: Arithmetic -> S -> Dist Int
+evalArithmetic (Add l r) s = binaryDistMap (+) (evalArithmetic l s) (evalArithmetic r s)
+evalArithmetic (Sub l r) s = binaryDistMap (-) (evalArithmetic l s) (evalArithmetic r s)
+evalArithmetic (Mul l r) s = binaryDistMap (*) (evalArithmetic l s) (evalArithmetic r s)
 evalArithmetic (Var name) s = case M.lookup name s of
-  Just n -> n
+  Just n -> point n
   Nothing ->
     error
       ( "Variable " ++ show name ++ " is not defined."
       )
-evalArithmetic (Lit i) _ = i
+evalArithmetic (Lit i) _ = point i
+evalArithmetic (ProbAri p l r) s = probAdd p (evalArithmetic l s) (evalArithmetic r s)
 
 evalStoreManipulation :: StoreManipulation -> S -> Dist S
-evalStoreManipulation (Set name value) s = uniform [M.insert name (evalArithmetic value s) s]
+evalStoreManipulation (Set name value) s = setStoreDist s name $ evalArithmetic value s
 evalStoreManipulation (ProbAdd p l r) s = probAdd p (evalStoreManipulation l s) (evalStoreManipulation r s)
+
+setStoreDist :: S -> String -> Dist Int -> Dist S
+setStoreDist s name val = D $ M.fromList $ map (\(v, p) -> (M.insert name v s, p)) dist
+  where
+    dist = M.toList $ runD val
 
 instance Semigroup CL where
   Skip <> k = k
@@ -88,8 +97,42 @@ f >=> g = D.join . D.fmap g . f
 
 conditional :: BL -> (S -> Dist S) -> (S -> Dist S) -> (S -> Dist S)
 conditional test trueEval falseEval =
-  (\s -> D.fmap (\b -> (b, s)) (evalBL test s))
+  (\s -> D.fmap (,s) (evalBL test s))
     >=> (\(b, s) -> if b then trueEval s else falseEval s)
+
+data CLF a
+  = SkipF
+  | UpdateF StoreManipulation a
+  | IfF BL a a a
+  | WhileF BL a a
+
+c :: CLF CL -> CL
+c SkipF = Skip
+c (UpdateF f p) = Update f p
+c (IfF c p q r) = If c p q r
+c (WhileF c p q) = While c p q
+
+propagate :: (CLF a -> a) -> (CL -> a)
+propagate alg Skip = alg SkipF
+propagate alg (Update f p) = alg (UpdateF f (propagate alg p))
+propagate alg (If c p q r) = alg (IfF c (propagate alg p) (propagate alg q) (propagate alg r))
+propagate alg (While c p q) = alg (WhileF c (propagate alg p) (propagate alg q))
+
+f >>> g = g . f
+
+--  evalBL test s = trueEval s
+--  otherwise = falseEval s
+
+sem :: CL -> (S -> Dist S)
+sem = propagate alg
+  where
+    alg :: CLF (S -> Dist S) -> (S -> Dist S)
+    alg SkipF = point
+    alg (UpdateF f p) = evalStoreManipulation f >=> p
+    alg (IfF c p q r) = conditional c p q >=> r
+    alg (WhileF c p q) =
+      let while = conditional c (p >=> while) q
+       in while
 
 eval :: CL -> (S -> Dist S)
 eval Skip = point
@@ -100,13 +143,13 @@ eval (While test whileCL rest) =
 
 example1 :: CL
 example1 =
-  update (Set "y" (Lit 0))
+  update (Set "y" (ProbAri (1 / 3) (Lit 0) (Lit 10)))
     <> while
       (G (Var "x") (Lit 0))
       ( update (Set "y" (Add (Var "y") (Var "x")))
           <> update (ProbAdd (2 / 3) (Set "x" (Sub (Var "x") (Lit 1))) (Set "x" (Sub (Var "x") (Lit 2))))
       )
 
-testV20 = P.printDist $ eval example1 start
+testV20 = P.printDist $ sem example1 start
   where
     start = M.singleton "x" 3

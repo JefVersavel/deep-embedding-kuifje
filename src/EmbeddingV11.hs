@@ -77,19 +77,51 @@ cond c p q = If c p q skip
 while :: BL -> CL -> CL
 while c p = While c p skip
 
-f >>> g = g f
+data CLF a
+  = SkipF
+  | UpdateF StoreManipulation a
+  | IfF BL a a a
+  | WhileF BL a a
 
-conditional :: BL -> (S -> S) -> (S -> S) -> S -> S
-conditional test trueEval falseEval s
-  | evalBL test s = trueEval s
-  | otherwise = falseEval s
+c :: CLF CL -> CL
+c SkipF = Skip
+c (UpdateF f p) = Update f p
+c (IfF c p q r) = If c p q r
+c (WhileF c p q) = While c p q
 
-eval :: CL -> S -> S
-eval Skip s = s
-eval (Update storeMan rest) s = evalStoreManipulation storeMan s >>> eval rest
-eval (If test ifCL thenCL rest) s = conditional test (eval ifCL) (eval thenCL) s >>> eval rest
-eval (While test whileCL rest) s =
-  conditional test (\s -> eval whileCL s >>> eval (While test whileCL rest)) (eval rest) s
+propagate :: (CLF a -> a) -> (CL -> a)
+propagate alg Skip = alg SkipF
+propagate alg (Update f p) = alg (UpdateF f (propagate alg p))
+propagate alg (If c p q r) = alg (IfF c (propagate alg p) (propagate alg q) (propagate alg r))
+propagate alg (While c p q) = alg (WhileF c (propagate alg p) (propagate alg q))
+
+f >>> g = g . f
+
+conditional :: BL -> (S -> S) -> (S -> S) -> (S -> S)
+conditional test trueEval falseEval =
+  (\s -> (evalBL test s, s))
+    >>> (\(b, s) -> if b then trueEval s else falseEval s)
+
+--  evalBL test s = trueEval s
+--  otherwise = falseEval s
+
+sem :: CL -> (S -> S)
+sem = propagate alg
+  where
+    alg :: CLF (S -> S) -> (S -> S)
+    alg SkipF = id
+    alg (UpdateF f p) = evalStoreManipulation f >>> p
+    alg (IfF c p q r) = conditional c p q >>> r
+    alg (WhileF c p q) =
+      let while = conditional c (p >>> while) q
+       in while
+
+-- eval :: CL -> S -> S
+-- eval Skip s = s
+-- eval (Update storeMan rest)s = evalStoreManipulation storeMan s >>> eval rest
+-- eval (If test ifCL thenCL rest) s = conditional test (eval ifCL) (eval thenCL) s >>> eval rest
+-- eval (While test whileCL rest) s =
+--   conditional test (\s -> eval whileCL s >>> eval (While test whileCL rest)) (eval rest) s
 
 example1 :: CL
 example1 =
@@ -100,6 +132,6 @@ example1 =
           <> update (Set "x" (Sub (Var "x") (Lit 1)))
       )
 
-testV11 = eval example1 start
+testV11 = sem example1 start
   where
     start = M.insert "x" 3 M.empty
