@@ -24,6 +24,9 @@ dependencies:
 - kuifje
 - containers
 - mtl
+- lens
+- bytestring
+- cereal
 
 library:
   source-dirs: src

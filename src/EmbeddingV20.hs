@@ -143,11 +143,36 @@ eval (While test whileCL rest) =
 
 example1 :: CL
 example1 =
-  update (Set "y" (ProbAri (1 / 3) (Lit 0) (Lit 10)))
+  update
+    ( Set
+        "y"
+        (Lit 0)
+    )
     <> while
-      (G (Var "x") (Lit 0))
-      ( update (Set "y" (Add (Var "y") (Var "x")))
-          <> update (ProbAdd (2 / 3) (Set "x" (Sub (Var "x") (Lit 1))) (Set "x" (Sub (Var "x") (Lit 2))))
+      ( G
+          (Var "x")
+          (Lit 0)
+      )
+      ( update
+          ( Set
+              "y"
+              ( Add
+                  (Var "y")
+                  (Var "x")
+              )
+          )
+          <> update
+            ( Set
+                "x"
+                ( Sub
+                    (Var "x")
+                    ( ProbAri
+                        (2 / 3)
+                        (Lit 1)
+                        (Lit 2)
+                    )
+                )
+            )
       )
 
 testV20 = P.printDist $ sem example1 start

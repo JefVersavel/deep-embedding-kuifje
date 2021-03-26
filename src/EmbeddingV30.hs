@@ -10,6 +10,7 @@ import Data.Maybe
 import Data.Semigroup as Semi
 import DistCalculations
 import Language.Kuifje.Distribution as D
+import Language.Kuifje.PrettyPrint
 import qualified PrettyPrinting as P
 
 type S = M.Map String Int
@@ -18,9 +19,7 @@ type Bit = Bool
 
 type Bits = [Bit]
 
-type a ===> b = a -> DB b
-
-type DB a = Dist (Bits, a)
+type a ===> b = a -> Dist (Bits, b)
 
 class ToBits a where
   toBits :: a -> Bits
@@ -128,8 +127,8 @@ f >=> g = join . D.fmap g . f
 conditional :: BL -> (S ===> S) -> (S ===> S) -> (S ===> S)
 conditional test trueEval falseEval =
   obsem (D.fmap toBits . evalBL test)
-    >=> (\([b], s) -> let a = D.return (b, s) in a)
-    >=> (\(b, s) -> if b then trueEval s else falseEval s)
+    >=> (\([b], s) -> D.return ([b], (b, s)))
+    >=> (\(_, (b, s)) -> if b then trueEval s else falseEval s)
 
 data CLF a
   = SkipF
@@ -165,10 +164,10 @@ sem = propagate alg
     alg (ObserveF f p) = obsem (evalBitsLang f) >=> (p . snd)
 
 uplift :: Ord b => (a -> Dist b) -> (a ===> b)
-uplift f = D.fmap ([],) . f
+uplift f = D.fmap (\b -> ([], b)) . f
 
 obsem :: (S -> Dist Bits) -> (S ===> S)
-obsem f s = D.fmap (,s) (f s)
+obsem f s = D.fmap (\w -> (w, s)) (f s)
 
 example3a :: CL
 example3a =
@@ -180,6 +179,8 @@ example3a =
           <> observe (Ari (Var "x"))
       )
 
-testV30 = sem example3a start
-  where
-    start = M.singleton "x" 3
+testV30 = sem skip M.empty
+
+secTest = sem (cond (ProbBool (1 / 2) Tru Fls) skip skip) M.empty
+
+extraTest = obsem (D.fmap toBits . (evalBL (ProbBool (1 / 2) Tru Fls))) >=> (\([b], s) -> D.return ([b], (b, s))) $ M.empty

@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 5d083b1d05564c21a6041324d7e487cffff029e2db3d5d9268656915e3749c1c
+-- hash: 1538f7934ff00de2bac57502e0000703aff5acc4be8f977e693e9a4dfaa133f6
 
 name:           deep-embedding-kuifje
 version:        0.1.0.0
@@ -36,13 +36,17 @@ library
       EmbeddingV20
       EmbeddingV30
       PrettyPrinting
+      State
   other-modules:
       Paths_deep_embedding_kuifje
   hs-source-dirs:
       src
   build-depends:
       base >=4.7 && <5
+    , bytestring
+    , cereal
     , containers
     , kuifje
+    , lens
     , mtl
   default-language: Haskell2010
