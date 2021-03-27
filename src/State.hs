@@ -20,15 +20,24 @@ showStore store = show <$> store
 
 class ToLiteral a where
   toLiteral :: a -> Literal
+  fromLiteral :: Literal -> a
 
 instance ToLiteral Int where
   toLiteral = I
+  fromLiteral (I i) = i
+  fromLiteral _ = error "wrong type"
 
 instance ToLiteral Char where
   toLiteral = C
+  fromLiteral (C i) = i
+  fromLiteral _ = error "wrong type"
 
 instance ToLiteral Bool where
   toLiteral = B
+  fromLiteral (B i) = i
+  fromLiteral _ = error "wrong type"
 
 instance ToLiteral a => ToLiteral [a] where
   toLiteral l = L $ map toLiteral l
+  fromLiteral (L l) = [fromLiteral i | i <- l]
+  fromLiteral _ = error "wrong type"
