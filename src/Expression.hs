@@ -1,4 +1,4 @@
-{-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE GADTs #-}
 
 module Expression where
 
@@ -9,51 +9,44 @@ import Language.Kuifje.Distribution hiding (map)
 import State
 import Prelude hiding (lookup, return)
 
-class (Ord a, ToLiteral a) => Expressable a where
-  data Expression a :: *
-  evaluate :: Expression a -> Store -> Literal
+data Expression a where
+  Var :: String -> Expression a
+  IntLit :: Int -> Expression Int
+  BoolLit :: Bool -> Expression Bool
+  CharLit :: Char -> Expression Char
+  ListLit :: [a] -> Expression [a]
+  IntCalc :: BinOpAri -> Expression Int -> Expression Int -> Expression Int
+  BoolCalc :: OpAriBool -> Expression Int -> Expression Int -> Expression Bool
+  BinBool :: BinOpBool -> Expression Bool -> Expression Bool -> Expression Bool
+  UniBool :: UnOpBool -> Expression Bool -> Expression Bool
+  Range :: (ToType a, Enum a) => Expression a -> Expression a -> Expression [a]
+  Elem :: Expression [a] -> Expression Int -> Expression a
 
-instance Expressable Int where
-  data Expression Int
-    = IntLit Int
-    | IntVar String
-    | IntCalc BinOpAri (Expression Int) (Expression Int)
-  evaluate (IntLit i) _ = I i
-  evaluate (IntVar s) store = case lookup s store of
-    Just (I i) -> I i
-    _ -> error "this is not good"
-  evaluate (IntCalc o l r) store = I $ opAriToFunc o left right
-    where
-      left = fromLiteral $ evaluate l store
-      right = fromLiteral $ evaluate r store
+eval :: ToType a => Expression a -> Store -> a
+eval (Var s) store = case lookup s (runStore store) of
+  Just lit -> toType lit
+  Nothing -> error $ "variable " ++ s ++ " was not found"
+eval (IntLit i) _ = i
+eval (BoolLit b) _ = b
+eval (CharLit c) _ = c
+eval (ListLit l) _ = l
+eval (IntCalc o l r) store = opAriToFunc o (eval l store) (eval r store)
+eval (BoolCalc o l r) store = opAriBoolTofunc o (eval l store) (eval r store)
+eval (BinBool o l r) store = binOpBoolToFunc o (eval l store) (eval r store)
+eval (UniBool o b) store = unOpBoolToFunc o $ eval b store
+eval (Range l r) store = [eval l store .. eval r store]
+eval (Elem l i) store = eval l store !! eval i store
 
-instance Expressable Bool where
-  data Expression Bool
-    = BoolLit Bool
-    | BoolVar String
-    | BoolCalc OpAriBool (Expression Int) (Expression Int)
-  evaluate (BoolCalc o l r) store =
-    B $
-      opAriBoolTofunc
-        o
-        (fromLiteral $ evaluate l store)
-        (fromLiteral $ evaluate r store)
+data Statement a where
+  Assign :: Expression a -> String -> Statement a
 
-instance Expressable Char where
-  data Expression Char = CharLit Char
-  evaluate (CharLit c) _ = C c
+execute :: (ToType a, ToLiteral a) => Statement a -> Store -> Store
+execute (Assign e s) store =
+  Store $
+    insert s (toLiteral $ eval e store) (runStore store)
 
-instance (Enum a, Expressable a) => Expressable [a] where
-  data Expression [a] = ListLit [a] | Range a a | Elem [a] (Expression Int)
-  evaluate (ListLit l) _ = toLiteral l
-  evaluate (Range l r) _ = L [toLiteral i | i <- [l .. r]]
-  evaluate (Elem l e) store =
-    map toLiteral l
-      !! fromLiteral (evaluate e store)
+testExp = Elem (ListLit ['a', 'c']) (Var "test")
 
-data Statement a = Assign String (Expression a)
+testStore = Store $ fromList [("test", I 0), ("sec", I 6)]
 
-execute :: Expressable a => Statement a -> Store -> Store
-execute (Assign s e) store = insert s (evaluate e store) store
-
-assignTest = return $ execute (Assign "test" (IntLit 5)) empty
+testEval = eval testExp testStore

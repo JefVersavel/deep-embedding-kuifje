@@ -27,6 +27,7 @@ dependencies:
 - lens
 - bytestring
 - cereal
+- boxes
 
 library:
   source-dirs: src

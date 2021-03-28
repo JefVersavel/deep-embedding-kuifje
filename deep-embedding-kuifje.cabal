@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: cfade3f96af194bde8faca3e9c8ee8ea44c153e6ab36d95bf5694f1a1277c09a
+-- hash: 4ba94fdbc1c8cf328be186a6a01d98a3ab311d6a5b965ba8389ca27ae8c2e40a
 
 name:           deep-embedding-kuifje
 version:        0.1.0.0
@@ -40,6 +40,7 @@ library
       Expression
       Language
       PrettyPrinting
+      ReadMeExample
       State
   other-modules:
       Paths_deep_embedding_kuifje
@@ -47,6 +48,7 @@ library
       src
   build-depends:
       base >=4.7 && <5
+    , boxes
     , bytestring
     , cereal
     , containers
