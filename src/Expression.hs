@@ -37,11 +37,23 @@ eval (UniBool o b) store = unOpBoolToFunc o $ eval b store
 eval (Range l r) store = [eval l store .. eval r store]
 eval (Elem l i) store = eval l store !! eval i store
 
-data Statement a where
-  Assign :: Expression a -> String -> Statement a
+data Statement where
+  AssignInt :: Expression Int -> String -> Statement
+  AssignBool :: Expression Bool -> String -> Statement
+  AssignChar :: Expression Char -> String -> Statement
+  AssignList :: (ToType a, ToLiteral a) => Expression [a] -> String -> Statement
 
-execute :: (ToType a, ToLiteral a) => Statement a -> Store -> Store
-execute (Assign e s) store =
+execute :: Statement -> Store -> Store
+execute (AssignInt e s) store =
+  Store $
+    insert s (toLiteral $ eval e store) (runStore store)
+execute (AssignBool e s) store =
+  Store $
+    insert s (toLiteral $ eval e store) (runStore store)
+execute (AssignChar e s) store =
+  Store $
+    insert s (toLiteral $ eval e store) (runStore store)
+execute (AssignList e s) store =
   Store $
     insert s (toLiteral $ eval e store) (runStore store)
 

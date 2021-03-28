@@ -1,3 +1,5 @@
+{-# LANGUAGE ExistentialQuantification #-}
+
 module Language where
 
 import Expression
@@ -6,12 +8,12 @@ import Language.Kuifje.PrettyPrint
 import State
 import Prelude hiding (return)
 
-data UpdateLanguage a
-  = URet (Statement a)
-  | UUni [Statement a]
-  | UChoose Prob (Statement a) (Statement a)
+data UpdateLanguage
+  = URet (Statement)
+  | UUni [Statement]
+  | UChoose Prob (Statement) (Statement)
 
-updateStatement :: (ToLiteral a, ToType a) => UpdateLanguage a -> Store -> Dist Store
+updateStatement :: UpdateLanguage -> Store -> Dist Store
 updateStatement (URet s) store = return $ execute s store
 updateStatement (UUni l) store = uniform [execute s store | s <- l]
 updateStatement (UChoose p l r) store = choose p (execute l store) (execute r store)
@@ -26,20 +28,28 @@ condition (CRet e) store = return $ eval e store
 condition (CUni l) store = uniform [eval e store | e <- l]
 condition (CChoose p l r) store = choose p (eval l store) (eval r store)
 
-data ObserveLanguage a
-  = ORet (Expression a)
-  | OUni [Expression a]
-  | OChoose Prob (Expression a) (Expression a)
+data Observation
+  = IntOb (Expression Int)
+  | BoolOb (Expression Bool)
+  | CharOb (Expression Char)
+  | forall a. (ToLiteral a, ToType a) => LitsOb (Expression [a])
 
-observation :: (ToType a, Ord a) => ObserveLanguage a -> Store -> Dist a
-observation (ORet e) store = return $ eval e store
+data ObserveLanguage
+  = ORet Observation
+  | OUni Observation
+  | OChoose Prob Observation Observation
+
+toExpr (IntOb e) = e
+
+observation :: (ToType a, Ord a) => ObserveLanguage -> Store -> Dist a
+observation (ORet e) store = return $ eval (toExpr e) store
 observation (OUni l) store = uniform [eval e store | e <- l]
 observation (OChoose p l r) store = choose p (eval l store) (eval r store)
 
 testje =
   print $
     updateStatement
-      (UUni [Assign testExp "alright", Assign testExp "not good"])
+      (UUni [AssignChar testExp "alright", AssignChar testExp "not good"])
       testStore
 
 --
