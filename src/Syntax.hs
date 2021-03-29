@@ -10,14 +10,14 @@ import State
 
 type a ~> b = a -> Dist b
 
-data Bobby a where
-  Skip :: Bobby a
-  Update :: UpdateLanguage a -> Bobby a -> Bobby a
-  If :: ConditionLanguage -> Bobby a -> Bobby a -> Bobby a -> Bobby a
-  While :: ConditionLanguage -> Bobby a -> Bobby a -> Bobby a
-  Observe :: ObserveLanguage a -> Bobby a -> Bobby a
+data Bobby where
+  Skip :: Bobby
+  Update :: UpdateLanguage -> Bobby -> Bobby
+  If :: ConditionLanguage -> Bobby -> Bobby -> Bobby -> Bobby
+  While :: ConditionLanguage -> Bobby -> Bobby -> Bobby
+  Observe :: (Ord a, ToType a, ToLiteral a) => ObserveLanguage a -> Bobby -> Bobby
 
-instance Semigroup (Bobby a) where
+instance Semigroup Bobby where
   Skip <> k = k
   Update f p <> k = Update f (p <> k)
   While c p q <> k = While c p (q <> k)
@@ -25,21 +25,21 @@ instance Semigroup (Bobby a) where
   Observe f p <> k = Observe f (p <> k)
 
 -- | Return a 'Skip' instruction.
-skip :: Bobby a
+skip :: Bobby
 skip = Skip
 
 -- | Return an 'Update' instruction.
-update :: UpdateLanguage a -> Bobby a
+update :: UpdateLanguage -> Bobby
 update f = Update f skip
 
 -- | Return a 'While' instruction.
-while :: ConditionLanguage -> Bobby a -> Bobby a
+while :: ConditionLanguage -> Bobby -> Bobby
 while c p = While c p skip
 
 -- | Return an 'If' instruction.
-cond :: ConditionLanguage -> Bobby a -> Bobby a -> Bobby a
+cond :: ConditionLanguage -> Bobby -> Bobby -> Bobby
 cond c p q = If c p q skip
 
 -- | Return an 'Observe' instruction.
-observe :: ObserveLanguage a -> Bobby a
+observe :: (Ord a, ToType a, ToLiteral a) => ObserveLanguage a -> Bobby
 observe o = Observe o skip

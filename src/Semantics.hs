@@ -9,7 +9,7 @@ import State
 import Syntax
 import Prelude hiding (return)
 
-hysemBobby :: (Ord a, ToType a, ToLiteral a) => Bobby a -> (Store ~~> Store)
+hysemBobby :: Bobby -> (Store ~~> Store)
 hysemBobby Skip = return
 hysemBobby (Update f p) = huplift (updateStatement f) ==> hysemBobby p
 hysemBobby (If c p q r) = conditional (condition c) (hysemBobby p) (hysemBobby q) ==> hysemBobby r

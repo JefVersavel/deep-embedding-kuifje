@@ -1,4 +1,5 @@
 {-# LANGUAGE ExistentialQuantification #-}
+{-# LANGUAGE GADTs #-}
 
 module Language where
 
@@ -9,9 +10,9 @@ import State
 import Prelude hiding (return)
 
 data UpdateLanguage
-  = URet (Statement)
+  = URet Statement
   | UUni [Statement]
-  | UChoose Prob (Statement) (Statement)
+  | UChoose Prob Statement Statement
 
 updateStatement :: UpdateLanguage -> Store -> Dist Store
 updateStatement (URet s) store = return $ execute s store
@@ -28,21 +29,13 @@ condition (CRet e) store = return $ eval e store
 condition (CUni l) store = uniform [eval e store | e <- l]
 condition (CChoose p l r) store = choose p (eval l store) (eval r store)
 
-data Observation
-  = IntOb (Expression Int)
-  | BoolOb (Expression Bool)
-  | CharOb (Expression Char)
-  | forall a. (ToLiteral a, ToType a) => LitsOb (Expression [a])
+data ObserveLanguage a where
+  ORet :: Expression a -> ObserveLanguage a
+  OUni :: [Expression a] -> ObserveLanguage a
+  OChoose :: Prob -> Expression a -> Expression a -> ObserveLanguage a
 
-data ObserveLanguage
-  = ORet Observation
-  | OUni Observation
-  | OChoose Prob Observation Observation
-
-toExpr (IntOb e) = e
-
-observation :: (ToType a, Ord a) => ObserveLanguage -> Store -> Dist a
-observation (ORet e) store = return $ eval (toExpr e) store
+observation :: (ToType a, Ord a) => ObserveLanguage a -> Store -> Dist a
+observation (ORet e) store = return $ eval e store
 observation (OUni l) store = uniform [eval e store | e <- l]
 observation (OChoose p l r) store = choose p (eval l store) (eval r store)
 

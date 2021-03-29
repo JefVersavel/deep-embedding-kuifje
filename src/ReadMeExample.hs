@@ -15,21 +15,22 @@ import Prelude hiding (fmap, lookup)
 initStore :: Int -> Store
 initStore x = Store $ fromList [("x", I x), ("y", I 0)]
 
-program :: Bobby Int
+program :: Bobby
 program =
-  update (URet (Assign (IntLit 0) "y"))
+  update (URet (AssignInt (IntLit 0) "y"))
     <> while
       (CRet (BoolCalc G (Var "x") (IntLit 0)))
       ( update
-          ( URet (Assign (CharLit 'c') "y")
+          ( URet (AssignList (Range (IntLit 0) (IntLit 6)) "y")
           )
           <> update
-            ( URet (Assign (IntCalc Sub (Var "x") (IntLit 1)) "x")
+            ( URet (AssignInt (IntCalc Sub (Var "x") (IntLit 1)) "x")
             )
+          <> observe (ORet (Range (IntLit 0) (IntLit 6)))
       )
 
 project :: Dist (Dist Store) -> Dist (Dist Literal)
 project = fmap (fmap (fromJust . lookup "y" . runStore))
 
-hyper :: Dist (Dist Literal)
-hyper = project $ hysemBobby program (uniform [initStore x | x <- [5 .. 8]])
+hyper :: Dist (Dist Store)
+hyper = hysemBobby program (uniform [initStore x | x <- [5 .. 8]])
