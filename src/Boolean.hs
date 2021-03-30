@@ -3,7 +3,7 @@ module Boolean where
 import Arithmetic
 import State
 
-data OpAriBool = S | G | Se | Ge | E
+data OpAriBool = S | G | Se | Ge | E | NE
 
 data UnOpBool = N
 
@@ -15,6 +15,7 @@ opAriBoolTofunc G = (>)
 opAriBoolTofunc Se = (<=)
 opAriBoolTofunc Ge = (>=)
 opAriBoolTofunc E = (==)
+opAriBoolTofunc NE = (/=)
 
 unOpBoolToFunc :: UnOpBool -> (Bool -> Bool)
 unOpBoolToFunc N = not

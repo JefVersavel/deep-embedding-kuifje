@@ -13,11 +13,13 @@ data UpdateLanguage
   = URet Statement
   | UUni [Statement]
   | UChoose Prob Statement Statement
+  | UUniAssignInt String (Expression [Int])
 
 updateStatement :: UpdateLanguage -> Store -> Dist Store
 updateStatement (URet s) store = return $ execute s store
 updateStatement (UUni l) store = uniform [execute s store | s <- l]
 updateStatement (UChoose p l r) store = choose p (execute l store) (execute r store)
+updateStatement (UUniAssignInt s e) store = uniform [execute (AssignInt (IntLit ev) s) store | ev <- eval e store]
 
 data ConditionLanguage
   = CRet (Expression Bool)
