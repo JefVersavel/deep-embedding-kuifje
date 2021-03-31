@@ -11,6 +11,10 @@ import Prelude hiding (lookup, return)
 
 data Expression a where
   Var :: String -> Expression a
+  IntVar :: String -> Expression Int
+  BoolVar :: String -> Expression Bool
+  CharVar :: String -> Expression Char
+  ListVar :: (ToType a, ToLiteral a) => String -> Expression [a]
   IntLit :: Int -> Expression Int
   BoolLit :: Bool -> Expression Bool
   CharLit :: Char -> Expression Char
@@ -20,10 +24,22 @@ data Expression a where
   BinBool :: BinOpBool -> Expression Bool -> Expression Bool -> Expression Bool
   UniBool :: UnOpBool -> Expression Bool -> Expression Bool
   Range :: (ToType a, Enum a) => Expression a -> Expression a -> Expression [a]
-  Elem :: Expression [a] -> Expression Int -> Expression a
+  Elem :: (ToType a, Enum a) => Expression [a] -> Expression Int -> Expression a
 
 eval :: ToType a => Expression a -> Store -> a
 eval (Var s) store = case lookup s (runStore store) of
+  Just lit -> toType lit
+  Nothing -> error $ "variable " ++ s ++ " was not found"
+eval (IntVar s) store = case lookup s (runStore store) of
+  Just lit -> toType lit
+  Nothing -> error $ "variable " ++ s ++ " was not found"
+eval (BoolVar s) store = case lookup s (runStore store) of
+  Just lit -> toType lit
+  Nothing -> error $ "variable " ++ s ++ " was not found"
+eval (CharVar s) store = case lookup s (runStore store) of
+  Just lit -> toType lit
+  Nothing -> error $ "variable " ++ s ++ " was not found"
+eval (ListVar s) store = case lookup s (runStore store) of
   Just lit -> toType lit
   Nothing -> error $ "variable " ++ s ++ " was not found"
 eval (IntLit i) _ = i
@@ -38,22 +54,9 @@ eval (Range l r) store = [eval l store .. eval r store]
 eval (Elem l i) store = eval l store !! eval i store
 
 data Statement where
-  AssignInt :: Expression Int -> String -> Statement
-  AssignBool :: Expression Bool -> String -> Statement
-  AssignChar :: Expression Char -> String -> Statement
-  AssignList :: (ToType a, ToLiteral a) => Expression [a] -> String -> Statement
+  Assign :: (ToType a, ToLiteral a) => Expression a -> String -> Statement
 
-execute :: Statement -> Store -> Store
-execute (AssignInt e s) store =
-  Store $
-    insert s (toLiteral $ eval e store) (runStore store)
-execute (AssignBool e s) store =
-  Store $
-    insert s (toLiteral $ eval e store) (runStore store)
-execute (AssignChar e s) store =
-  Store $
-    insert s (toLiteral $ eval e store) (runStore store)
-execute (AssignList e s) store =
+execute (Assign e s) store =
   Store $
     insert s (toLiteral $ eval e store) (runStore store)
 

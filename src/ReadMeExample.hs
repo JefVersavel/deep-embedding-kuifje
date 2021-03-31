@@ -17,14 +17,14 @@ initStore x = Store $ fromList [("x", I x), ("y", I 0)]
 
 program :: Bobby
 program =
-  update (URet (AssignInt (IntLit 0) "y"))
+  update (URet (Assign (IntLit 0) "y"))
     <> while
       (CRet (BoolCalc G (Var "x") (IntLit 0)))
       ( update
-          ( URet (AssignList (Range (IntLit 0) (IntLit 6)) "y")
+          ( URet (Assign (IntCalc Add (Var "x") (Var "y")) "y")
           )
           <> update
-            ( URet (AssignInt (IntCalc Sub (Var "x") (IntLit 1)) "x")
+            ( URet (Assign (IntCalc Sub (Var "x") (IntLit 1)) "x")
             )
           <> observe (ORet (Range (IntLit 0) (IntLit 6)))
       )

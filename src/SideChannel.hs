@@ -17,12 +17,12 @@ initStore base exp = Store $ fromList [("base", I base), ("exp", I exp), ("e", I
 
 exponentiation :: [Int] -> Bobby
 exponentiation ds =
-  update (URet (AssignInt (Var "exp") "e"))
-    <> update (URet (AssignInt (IntLit 1) "p"))
+  update (URet (Assign (IntVar "exp") "e"))
+    <> update (URet (Assign (IntLit 1) "p"))
     <> while
       (CRet (BoolCalc NE (Var "e") (IntLit 0)))
       ( update (UUniAssignInt "d" (ListLit ds))
-          <> update (URet $ AssignInt (IntLit 0) "e")
+          <> update (URet $ Assign (IntLit 0) "e")
           <> cond
             (CRet (BoolCalc NE (IntCalc Mod (Var "e") (Var "d")) (IntLit 0)))
             skip
