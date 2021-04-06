@@ -10,6 +10,7 @@ import Language.Kuifje.Distribution
 import Semantics
 import State
 import Syntax
+import Type
 import Prelude hiding (fmap, lookup)
 
 initStore :: Int -> Store
@@ -17,13 +18,13 @@ initStore x = Store $ fromList [("x", I x), ("y", I 0)]
 
 program :: Bobby
 program =
-  update (URet $ Assign "y" $ IntLit 0)
+  update (URet $ AssignAn IType "y" $ Lit 0)
     <> while
-      (CRet $ BoolCalc G (Var "x") (IntLit 0))
+      (CRet $ BoolCalc IType G (Var "x") (Lit 0))
       ( update
           (URet $ Assign "y" $ IntCalc Add (Var "x") (Var "y"))
           <> update
-            (URet $ Assign "x" $ IntCalc Sub (Var "x") (IntLit 1))
+            (URet $ Assign "x" $ IntCalc Sub (Var "x") (Lit 1))
       )
 
 project :: Dist (Dist Store) -> Dist (Dist Literal)

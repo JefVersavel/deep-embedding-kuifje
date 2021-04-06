@@ -10,6 +10,7 @@ import Language.Kuifje.Distribution
 import Semantics
 import State
 import Syntax
+import Type
 import Prelude hiding (fmap, lookup)
 
 initStore :: Int -> Int -> Store
@@ -17,13 +18,13 @@ initStore base exp = Store $ fromList [("base", I base), ("exp", I exp), ("e", I
 
 exponentiation :: [Int] -> Bobby
 exponentiation ds =
-  update (URet $ Assign "e" $ IntVar "exp")
-    <> update (URet $ Assign "p" $ IntLit 1)
+  update (URet $ AssignAn IType "e" $ Var "exp")
+    <> update (URet $ AssignAn IType "p" $ Lit 1)
     <> while
-      (CRet (BoolCalc NE (Var "e") (IntLit 0)))
-      ( update (UUniAssignInt "d" (ListLit ds))
+      (CRet (BoolCalc IType NE (Var "e") (Lit 0)))
+      ( update (UUniAssignInt "d" (Lit ds))
           <> cond
-            (CRet $ BoolCalc NE (IntCalc Mod (Var "e") (Var "d")) (IntLit 0))
+            (CRet $ BoolCalc IType NE (IntCalc Mod (Var "e") (Var "d")) (Lit 0))
             ( update
                 ( URet $
                     Assign "p" $

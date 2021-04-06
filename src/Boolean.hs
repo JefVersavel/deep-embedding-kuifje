@@ -9,7 +9,7 @@ data UnOpBool = N
 
 data BinOpBool = And | Or
 
-opAriBoolTofunc :: OpAriBool -> (Int -> Int -> Bool)
+opAriBoolTofunc :: (Ord a) => OpAriBool -> (a -> a -> Bool)
 opAriBoolTofunc S = (<)
 opAriBoolTofunc G = (>)
 opAriBoolTofunc Se = (<=)
