@@ -39,7 +39,6 @@ basicI n =
     <> while
       (CRet $ BinBool And (Var "ans") (BoolCalc S (Var "i") (Var "n")))
       ( cond
-          -- also add string comparison
           (CRet $ CharBool NEc (Elem (Var "pw") (Var "i")) (Elem (Var "gs") (Var "i")))
           ( update (URet $ Assign "ans" $ BoolLit False)
           )
@@ -49,3 +48,72 @@ basicI n =
 
 hyperI :: String -> String -> Dist (Dist Literal)
 hyperI pw gs = projectPw (hysemBobby (basicI (length pw)) (initialDist pw gs))
+
+basicL :: Int -> Bobby
+basicL n =
+  update (URet $ Assign "n" $ IntLit n)
+    <> update (URet $ Assign "i" $ IntLit 0)
+    <> update (URet $ Assign "ans" $ BoolLit True)
+    <> while
+      (CRet $ BoolCalc S (Var "i") (Var "n"))
+      ( cond
+          (CRet $ CharBool NEc (Elem (Var "pw") (Var "i")) (Elem (Var "gs") (Var "i")))
+          ( update (URet $ Assign "ans" $ BoolLit False)
+          )
+          skip
+          <> update (URet $ Assign "i" $ IntCalc Add (Var "i") (IntLit 1))
+      )
+
+hyperL :: String -> String -> Dist (Dist Literal)
+hyperL pw gs = projectPw (hysemBobby (basicL (length pw)) (initialDist pw gs))
+
+basicM :: Int -> Bobby
+basicM n =
+  update (URet $ Assign "n" $ IntLit n)
+    <> update (URet $ Assign "i" $ IntLit 0)
+    <> update (URet $ Assign "ans" $ BoolLit True)
+    <> while
+      (CRet $ BoolCalc S (Var "i") (Var "n"))
+      ( update
+          ( URet $
+              Assign "ans" $
+                BinBool
+                  And
+                  (Var "ans")
+                  ( CharBool
+                      Ec
+                      (Elem (Var "pw") (Var "i"))
+                      (Elem (Var "gs") (Var "i"))
+                  )
+          )
+          <> update (URet $ Assign "i" $ IntCalc Add (Var "i") (IntLit 1))
+      )
+
+hyperM :: String -> String -> Dist (Dist Literal)
+hyperM pw gs = projectPw (hysemBobby (basicM (length pw)) (initialDist pw gs))
+
+basicN :: Int -> Bobby
+basicN n =
+  update (URet $ Assign "n" $ IntLit n)
+    <> update (URet $ Assign "i" $ IntLit 0)
+    <> update (URet $ Assign "ans" $ BoolLit True)
+    <> while
+      (CRet $ BoolCalc S (Var "i") (Var "n"))
+      ( update
+          ( URet $
+              Assign "ans" $
+                BinBool
+                  And
+                  (Var "ans")
+                  ( CharBool
+                      Ec
+                      (Elem (Var "pw") (Var "i"))
+                      (Elem (Var "gs") (Var "i"))
+                  )
+          )
+          <> update (URet $ Assign "i" $ IntCalc Add (Var "i") (IntLit 1))
+      )
+    <> observe (ORet BType (Var "ans"))
+
+hyperN :: String -> String -> Dist (Dist Literal)
+hyperN pw gs = projectPw (hysemBobby (basicN (length pw)) (initialDist pw gs))

@@ -32,8 +32,8 @@ data Expression a where
   CharBool :: CharOp -> Expression Char -> Expression Char -> Expression Bool
 
 eval :: ToType a => Expression a -> Store -> a
-eval (Var s) store = trace (show s) $ case lookup s (runStore store) of
-  Just lit -> trace (show lit) toType lit
+eval (Var s) store = case lookup s (runStore store) of
+  Just lit -> toType lit
   Nothing -> error $ "variable " ++ s ++ " was not found"
 eval (IntVar s) store = case lookup s (runStore store) of
   Just lit -> toType lit

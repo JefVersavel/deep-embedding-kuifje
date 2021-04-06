@@ -1,5 +1,6 @@
 {-# LANGUAGE ExistentialQuantification #-}
 {-# LANGUAGE GADTs #-}
+{-# LANGUAGE KindSignatures #-}
 
 module Language where
 
@@ -32,12 +33,20 @@ condition (CUni l) store = uniform [eval e store | e <- l]
 condition (CChoose p l r) store = choose p (eval l store) (eval r store)
 
 data ObserveLanguage a where
-  ORet :: Expression a -> ObserveLanguage a
+  ORet :: Type a -> Expression a -> ObserveLanguage a
   OUni :: [Expression a] -> ObserveLanguage a
   OChoose :: Prob -> Expression a -> Expression a -> ObserveLanguage a
 
+data Type :: * -> * where
+  IType :: Type Int
+  CType :: Type Char
+  BType :: Type Bool
+  LIType :: Type [Int]
+  LCType :: Type [Char]
+  LBType :: Type [Bool]
+
 observation :: (ToType a, Ord a) => ObserveLanguage a -> Store -> Dist a
-observation (ORet e) store = return $ eval e store
+observation (ORet t e) store = return $ eval e store
 observation (OUni l) store = uniform [eval e store | e <- l]
 observation (OChoose p l r) store = choose p (eval l store) (eval r store)
 
