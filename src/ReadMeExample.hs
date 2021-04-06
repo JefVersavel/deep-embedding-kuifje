@@ -17,16 +17,13 @@ initStore x = Store $ fromList [("x", I x), ("y", I 0)]
 
 program :: Bobby
 program =
-  update (URet (Assign (IntLit 0) "y"))
+  update (URet $ Assign "y" $ IntLit 0)
     <> while
-      (CRet (BoolCalc G (Var "x") (IntLit 0)))
+      (CRet $ BoolCalc G (Var "x") (IntLit 0))
       ( update
-          ( URet (Assign (IntCalc Add (Var "x") (Var "y")) "y")
-          )
+          (URet $ Assign "y" $ IntCalc Add (Var "x") (Var "y"))
           <> update
-            ( URet (Assign (IntCalc Sub (Var "x") (IntLit 1)) "x")
-            )
-          <> observe (ORet (Range (IntLit 0) (IntLit 6)))
+            (URet $ Assign "x" $ IntCalc Sub (Var "x") (IntLit 1))
       )
 
 project :: Dist (Dist Store) -> Dist (Dist Literal)

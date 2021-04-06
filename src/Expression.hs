@@ -4,8 +4,11 @@ module Expression where
 
 import Arithmetic
 import Boolean
+import CharComparison
 import Data.Map hiding (map)
+import Debug.Trace
 import Language.Kuifje.Distribution hiding (map)
+import ListComparison
 import State
 import Prelude hiding (lookup, return)
 
@@ -24,11 +27,13 @@ data Expression a where
   BinBool :: BinOpBool -> Expression Bool -> Expression Bool -> Expression Bool
   UniBool :: UnOpBool -> Expression Bool -> Expression Bool
   Range :: (ToType a, Enum a) => Expression a -> Expression a -> Expression [a]
-  Elem :: (ToType a, Enum a) => Expression [a] -> Expression Int -> Expression a
+  Elem :: (ToType a, Enum a, Show a) => Expression [a] -> Expression Int -> Expression a
+  ListBool :: (Eq a, ToType a) => ListOp -> Expression [a] -> Expression [a] -> Expression Bool
+  CharBool :: CharOp -> Expression Char -> Expression Char -> Expression Bool
 
 eval :: ToType a => Expression a -> Store -> a
-eval (Var s) store = case lookup s (runStore store) of
-  Just lit -> toType lit
+eval (Var s) store = trace (show s) $ case lookup s (runStore store) of
+  Just lit -> trace (show lit) toType lit
   Nothing -> error $ "variable " ++ s ++ " was not found"
 eval (IntVar s) store = case lookup s (runStore store) of
   Just lit -> toType lit
@@ -52,11 +57,13 @@ eval (BinBool o l r) store = binOpBoolToFunc o (eval l store) (eval r store)
 eval (UniBool o b) store = unOpBoolToFunc o $ eval b store
 eval (Range l r) store = [eval l store .. eval r store]
 eval (Elem l i) store = eval l store !! eval i store
+eval (ListBool o l r) store = listOpToFunc o (eval l store) (eval r store)
+eval (CharBool o l r) store = charOpToFunc o (eval l store) (eval r store)
 
 data Statement where
-  Assign :: (ToType a, ToLiteral a) => Expression a -> String -> Statement
+  Assign :: (ToType a, ToLiteral a) => String -> Expression a -> Statement
 
-execute (Assign e s) store =
+execute (Assign s e) store =
   Store $
     insert s (toLiteral $ eval e store) (runStore store)
 

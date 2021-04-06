@@ -17,17 +17,37 @@ initStore base exp = Store $ fromList [("base", I base), ("exp", I exp), ("e", I
 
 exponentiation :: [Int] -> Bobby
 exponentiation ds =
-  update (URet (Assign (IntVar "exp") "e"))
-    <> update (URet (Assign (IntLit 1) "p"))
+  update (URet $ Assign "e" $ IntVar "exp")
+    <> update (URet $ Assign "p" $ IntLit 1)
     <> while
       (CRet (BoolCalc NE (Var "e") (IntLit 0)))
       ( update (UUniAssignInt "d" (ListLit ds))
-          <> update (URet $ Assign (IntLit 0) "e")
           <> cond
-            (CRet (BoolCalc NE (IntCalc Mod (Var "e") (Var "d")) (IntLit 0)))
+            (CRet $ BoolCalc NE (IntCalc Mod (Var "e") (Var "d")) (IntLit 0))
+            ( update
+                ( URet $
+                    Assign "p" $
+                      IntCalc
+                        Power
+                        (IntCalc Mul (Var "p") (Var "base"))
+                        (IntCalc Mod (Var "e") (Var "d"))
+                )
+                <> update
+                  ( URet $
+                      Assign "e" $
+                        IntCalc Sub (Var "e") (IntCalc Mod (Var "e") (Var "d"))
+                  )
+            )
             skip
-            skip
+          <> update (URet $ Assign "base" $ IntCalc Power (Var "base") (Var "d"))
+          <> update (URet $ Assign "e" $ IntCalc Div (Var "e") (Var "d"))
       )
 
-expon :: Dist (Dist Store)
-expon = hysemBobby (exponentiation [2, 3, 4]) $ uniform [initStore 6 exp | exp <- [0 .. 15]]
+sideProject :: Dist (Dist Store) -> Dist (Dist Literal)
+sideProject = fmap (fmap (fromJust . lookup "exp" . runStore))
+
+hyper2 :: Dist (Dist Literal)
+hyper2 = sideProject $ hysemBobby (exponentiation [2]) (uniform [initStore 6 exp | exp <- [0 .. 15]])
+
+hyper235 :: Dist (Dist Literal)
+hyper235 = sideProject $ hysemBobby (exponentiation [2, 3, 5]) (uniform [initStore 6 exp | exp <- [0 .. 15]])

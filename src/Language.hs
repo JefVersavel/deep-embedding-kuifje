@@ -19,7 +19,7 @@ updateStatement :: UpdateLanguage -> Store -> Dist Store
 updateStatement (URet s) store = return $ execute s store
 updateStatement (UUni l) store = uniform [execute s store | s <- l]
 updateStatement (UChoose p l r) store = choose p (execute l store) (execute r store)
-updateStatement (UUniAssignInt s e) store = uniform [execute (Assign (IntLit ev) s) store | ev <- eval e store]
+updateStatement (UUniAssignInt s e) store = uniform [execute (Assign s (IntLit ev)) store | ev <- eval e store]
 
 data ConditionLanguage
   = CRet (Expression Bool)
@@ -44,7 +44,7 @@ observation (OChoose p l r) store = choose p (eval l store) (eval r store)
 testje =
   print $
     updateStatement
-      (UUni [Assign testExp "alright", Assign testExp "not good"])
+      (UUni [Assign "alright" testExp, Assign "not good" testExp])
       testStore
 
 --

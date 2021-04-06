@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 762840eeea02fb0ac822d6ce8634e26af8905c28b95778434e9a07a6525bdfa4
+-- hash: 97b9e4a37cc055b217f85993c5679c5a18b413b056e3008a17fdea469240c8b8
 
 name:           deep-embedding-kuifje
 version:        0.1.0.0
@@ -29,6 +29,7 @@ library
   exposed-modules:
       Arithmetic
       Boolean
+      CharComparison
       DistCalculations
       EmbeddingV10
       EmbeddingV11
@@ -39,6 +40,9 @@ library
       EmbeddingV30
       Expression
       Language
+      ListComparison
+      Monty
+      Password
       PrettyPrinting
       ReadMeExample
       Semantics
