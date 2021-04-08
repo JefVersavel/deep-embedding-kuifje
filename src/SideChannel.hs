@@ -22,7 +22,7 @@ exponentiation ds =
     <> update (URet $ AssignAn IType "p" $ Lit 1)
     <> while
       (CRet (BoolCalc IType NE (Var "e") (Lit 0)))
-      ( update (UUniAssignInt "d" (Lit ds))
+      ( update (UUniAssign IType "d" (Lit ds))
           <> cond
             (CRet $ BoolCalc IType NE (IntCalc Mod (Var "e") (Var "d")) (Lit 0))
             ( update

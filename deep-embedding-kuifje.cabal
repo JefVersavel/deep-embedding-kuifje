@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 46656fff7e3e36b8d5b31508f73222280c6437e8d37654cb98a1df5a243d8516
+-- hash: bd93df94714bca7b8141d77d3b437430bbbedd488f688c188d83606065f32aa1
 
 name:           deep-embedding-kuifje
 version:        0.1.0.0
@@ -46,6 +46,7 @@ library
       Password
       PrettyPrinting
       ReadMeExample
+      ReadMeExampleKuifje
       Semantics
       SideChannel
       State

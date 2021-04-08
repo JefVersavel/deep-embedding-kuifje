@@ -44,9 +44,14 @@ eval (Singleton e) store = [eval e store]
 eval Empty _ = []
 eval (ToList l) store = (`eval` store) <$> l
 
+data Expression' a where
+  Lit' :: a -> Expression' a
+  Add' :: Expression' Int -> Expression' Int -> Expression' Int
+  Equal :: Expression' Int -> Expression' Int -> Expression' Bool
+
 data Statement where
-  Assign :: (ToType a, ToLiteral a) => String -> Expression a -> Statement
-  AssignAn :: (ToType a, ToLiteral a) => Type a -> String -> Expression a -> Statement
+  Assign :: (ToType a) => String -> Expression a -> Statement
+  AssignAn :: (ToType a) => Type a -> String -> Expression a -> Statement
 
 execute :: Statement -> Store -> Store
 execute (Assign s e) store =

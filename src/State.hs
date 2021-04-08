@@ -1,9 +1,13 @@
+{-# LANGUAGE GADTs #-}
+
 module State where
 
 import Data.Map hiding (map)
 import qualified Data.Map.Strict as HM (elems, mapWithKey)
 import Language.Kuifje.PrettyPrint
 import Text.PrettyPrint.Boxes
+import Type
+import Prelude hiding (lookup)
 
 -- could later change it to static typing by adding a type to the string and checking it at compiletime
 newtype Store = Store {runStore :: Map String Literal}
@@ -33,36 +37,26 @@ instance Show Literal where
 showStore :: Store -> Map String String
 showStore store = show <$> runStore store
 
-class ToLiteral a where
-  toLiteral :: a -> Literal
-
 class ToType a where
   toType :: Literal -> a
+  toLiteral :: a -> Literal
 
 instance ToType Int where
   toType (I i) = i
   toType _ = error "wrong type"
+  toLiteral = I
 
 instance ToType Char where
   toType (C c) = c
   toType _ = error "wrong type"
+  toLiteral = C
 
 instance ToType Bool where
   toType (B b) = b
   toType _ = error "wrong type"
+  toLiteral = B
 
 instance ToType a => ToType [a] where
   toType (L l) = map toType l
   toType _ = error "wrong type"
-
-instance ToLiteral Int where
-  toLiteral = I
-
-instance ToLiteral Char where
-  toLiteral = C
-
-instance ToLiteral Bool where
-  toLiteral = B
-
-instance ToLiteral a => ToLiteral [a] where
   toLiteral l = L $ map toLiteral l

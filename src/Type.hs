@@ -8,7 +8,3 @@ data Type a where
   CType :: Type Char
   BType :: Type Bool
   LType :: Type a -> Type [a]
-  LIType :: Type [Int]
-  LCType :: Type [Char]
-  LBType :: Type [Bool]
-  AType :: Type a
