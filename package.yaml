@@ -28,6 +28,7 @@ dependencies:
 - bytestring
 - cereal
 - boxes
+- template-haskell
 
 library:
   source-dirs: src

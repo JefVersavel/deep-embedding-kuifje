@@ -42,9 +42,3 @@ observation :: (ToType a, Ord a) => ObserveLanguage a -> Store -> Dist a
 observation (ORet t e) store = return $ eval e store
 observation (OUni t l) store = uniform $ eval l store
 observation (OChoose t p l r) store = choose p (eval l store) (eval r store)
-
-testje =
-  print $
-    updateStatement
-      (UUni [AssignAn IType "alright" testExp, AssignAn IType "not good" testExp])
-      testStore

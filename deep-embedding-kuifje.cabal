@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 580732005c21ffd9fb53d40e6c192a66581cf7e927095f64956ce0cabe5005ad
+-- hash: 46656fff7e3e36b8d5b31508f73222280c6437e8d37654cb98a1df5a243d8516
 
 name:           deep-embedding-kuifje
 version:        0.1.0.0
@@ -42,6 +42,7 @@ library
       Language
       ListComparison
       Monty
+      Parsing
       Password
       PrettyPrinting
       ReadMeExample
@@ -49,7 +50,12 @@ library
       SideChannel
       State
       Syntax
+      Test
+      Test2
+      TestTest
       Type
+      TypeCheckedDSL
+      TypeCheckedDSLTH
   other-modules:
       Paths_deep_embedding_kuifje
   hs-source-dirs:
@@ -63,4 +69,5 @@ library
     , kuifje
     , lens
     , mtl
+    , template-haskell
   default-language: Haskell2010

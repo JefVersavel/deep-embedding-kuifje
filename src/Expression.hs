@@ -55,10 +55,8 @@ execute (Assign s e) store =
 execute (AssignAn t s e) store =
   Store $ insert s (toLiteral $ eval e store) (runStore store)
 
-testExp = Lit 2 :: Expression Int
+testExp i = Lit (i :: Int)
 
 testStore = Store $ fromList [("test", I 0), ("sec", I 6)]
 
-testEval = eval testExp testStore
-
-data ATExp = forall a. Expression a ::: Type a
+testEval = eval (testExp 2) testStore
