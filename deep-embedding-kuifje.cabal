@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 73bdd9e2e049b1b63d4e10fc01e7149b36b1672ce66ab5435dccb51990e7c999
+-- hash: 78d0b4a979b11bbebbaf7a295348ca1f837a27c375185dc711ece8acb25cfbaf
 
 name:           deep-embedding-kuifje
 version:        0.1.0.0
@@ -45,6 +45,7 @@ library
       Examples.ReadMeExampleKuifje
       Examples.RunExamples
       Examples.SideChannel
+      Examples.UReadMeExample
       Expression
       Language
       ListComparison

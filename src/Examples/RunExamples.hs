@@ -5,10 +5,13 @@ import Examples.Password
 import Examples.ReadMeExample
 import Examples.ReadMeExampleKuifje
 import Examples.SideChannel
+import Examples.UReadMeExample
 
 mainTest = do
   print "ReadMeExample"
   print hyper
+  print "UReadMeExample"
+  print uhyper
   print "ReadMeExampleKuifje"
   print hyperKuifje
   print "SideChannel"
