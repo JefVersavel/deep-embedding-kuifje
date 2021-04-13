@@ -14,7 +14,7 @@ data UpdateLanguage
   = URet Statement
   | UUni [Statement]
   | UChoose Prob Statement Statement
-  | forall a. ToType a => UUniAssign (Type a) String (Expression [a])
+  | forall a. (ToType a, Show a) => UUniAssign (Type a) String (Expression [a])
 
 updateStatement :: UpdateLanguage -> Store -> Dist Store
 updateStatement (URet s) store = return $ execute s store

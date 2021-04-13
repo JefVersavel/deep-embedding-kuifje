@@ -16,17 +16,31 @@ import Prelude hiding (lookup, return)
 
 data Expression a where
   Var :: String -> Expression a
-  Lit :: ToType a => a -> Expression a
+  Lit :: (ToType a, Show a) => a -> Expression a
   IntCalc :: BinOpAri -> Expression Int -> Expression Int -> Expression Int
-  BoolCalc :: (Ord a, ToType a) => Type a -> OpAriBool -> Expression a -> Expression a -> Expression Bool
+  BoolCalc :: (Ord a, ToType a, Show a) => Type a -> OpAriBool -> Expression a -> Expression a -> Expression Bool
   BinBool :: BinOpBool -> Expression Bool -> Expression Bool -> Expression Bool
   UniBool :: UnOpBool -> Expression Bool -> Expression Bool
   Range :: (ToType a, Enum a, Show a) => Expression a -> Expression a -> Expression [a]
   Elem :: (ToType a, Show a) => Expression [a] -> Expression Int -> Expression a
   ListDiv :: (ToType a, Eq a, Show a) => Expression [a] -> Expression [a] -> Expression [a]
-  Singleton :: (ToType a) => Expression a -> Expression [a]
-  Empty :: (ToType a) => Type a -> Expression [a]
-  ToList :: (ToType a) => [Expression a] -> Expression [a]
+  Singleton :: (ToType a, Show a) => Expression a -> Expression [a]
+  Empty :: (ToType a, Show a) => Type a -> Expression [a]
+  ToList :: (ToType a, Show a) => [Expression a] -> Expression [a]
+
+instance Show (Expression a) where
+  show (Var s) = s
+  show (Lit a) = show a
+  show (IntCalc o l r) = show l ++ " " ++ show o ++ " " ++ show r
+  show (BoolCalc _ o l r) = show l ++ " " ++ show o ++ " " ++ show r
+  show (BinBool o l r) = show l ++ " " ++ show o ++ " " ++ show r
+  show (UniBool o e) = show o ++ " " ++ show e
+  show (Range b e) = "[" ++ show b ++ " .. " ++ show e ++ "]"
+  show (Elem l i) = show l ++ "!!" ++ show i
+  show (ListDiv l r) = show l ++ "\\" ++ show r
+  show (Singleton e) = "[" ++ show e ++ "]"
+  show (Empty _) = "[]"
+  show (ToList l) = show l
 
 eval :: ToType a => Expression a -> Store -> a
 eval (Var s) store = case lookup s (runStore store) of
@@ -50,7 +64,7 @@ data Expression' a where
   Equal :: Expression' Int -> Expression' Int -> Expression' Bool
 
 data Statement
-  = forall a. ToType a => Assign String (Expression a)
+  = forall a. (ToType a) => Assign String (Expression a)
   | forall a. ToType a => AssignAn (Type a) String (Expression a)
   | forall a. ToType a => (:=) (Type a, String) (Expression a)
 

@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 1e7655e12b9b9abb013559df09178064772bad068f53f9baae4dde8a29c27b73
+-- hash: 73bdd9e2e049b1b63d4e10fc01e7149b36b1672ce66ab5435dccb51990e7c999
 
 name:           deep-embedding-kuifje
 version:        0.1.0.0
@@ -56,6 +56,7 @@ library
       Test2
       TestTest
       Type
+      TypeCheck
       TypeCheckedDSL
       TypeCheckedDSLTH
   other-modules:
