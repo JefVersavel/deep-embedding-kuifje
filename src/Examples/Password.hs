@@ -129,7 +129,7 @@ basicR n =
     <> update (URet $ AssignAn IType "i" $ Lit 0)
     <> update (URet $ Assign "ans" $ Lit True)
     <> while
-      (CRet $ BinBool And (Var "ans") (BoolCalc (LType IType) NE (Var "l") (Empty IType)))
+      (CRet $ BinBool And (Var "ans") (BoolCalc (LType IType) NE (Var "l") (LitAn (LType IType) [])))
       ( update
           (UUniAssign IType "i" (Var "l"))
           <> update
@@ -159,7 +159,7 @@ basicS n =
     <> update (URet $ AssignAn IType "i" $ Lit 0)
     <> update (URet $ Assign "ans" $ Lit True)
     <> while
-      (CRet $ BinBool And (Var "ans") (BoolCalc (LType IType) NE (Var "l") (Empty IType)))
+      (CRet $ BinBool And (Var "ans") (BoolCalc (LType IType) NE (Var "l") (LitAn (LType IType) [])))
       ( update
           (UUniAssign IType "i" (Var "l"))
           <> cond

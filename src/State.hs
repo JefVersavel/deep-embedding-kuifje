@@ -40,23 +40,28 @@ showStore store = show <$> runStore store
 class ToType a where
   toType :: Literal -> a
   toLiteral :: a -> Literal
+  getType :: a -> Type a
 
 instance ToType Int where
   toType (I i) = i
   toType _ = error "wrong type"
   toLiteral = I
+  getType _ = IType
 
 instance ToType Char where
   toType (C c) = c
   toType _ = error "wrong type"
   toLiteral = C
+  getType _ = CType
 
 instance ToType Bool where
   toType (B b) = b
   toType _ = error "wrong type"
   toLiteral = B
+  getType _ = BType
 
 instance ToType a => ToType [a] where
   toType (L l) = map toType l
   toType _ = error "wrong type"
   toLiteral l = L $ map toLiteral l
+  getType a = LType $ getType $ head a

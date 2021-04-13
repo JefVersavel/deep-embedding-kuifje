@@ -17,6 +17,7 @@ import Prelude hiding (lookup, return)
 data Expression a where
   Var :: String -> Expression a
   Lit :: (ToType a, Show a) => a -> Expression a
+  LitAn :: (ToType a, Show a) => Type a -> a -> Expression a
   IntCalc :: BinOpAri -> Expression Int -> Expression Int -> Expression Int
   BoolCalc :: (Ord a, ToType a, Show a) => Type a -> OpAriBool -> Expression a -> Expression a -> Expression Bool
   BinBool :: BinOpBool -> Expression Bool -> Expression Bool -> Expression Bool
@@ -25,12 +26,12 @@ data Expression a where
   Elem :: (ToType a, Show a) => Expression [a] -> Expression Int -> Expression a
   ListDiv :: (ToType a, Eq a, Show a) => Expression [a] -> Expression [a] -> Expression [a]
   Singleton :: (ToType a, Show a) => Expression a -> Expression [a]
-  Empty :: (ToType a, Show a) => Type a -> Expression [a]
   ToList :: (ToType a, Show a) => [Expression a] -> Expression [a]
 
 instance Show (Expression a) where
   show (Var s) = s
   show (Lit a) = show a
+  show (LitAn _ a) = show a
   show (IntCalc o l r) = show l ++ " " ++ show o ++ " " ++ show r
   show (BoolCalc _ o l r) = show l ++ " " ++ show o ++ " " ++ show r
   show (BinBool o l r) = show l ++ " " ++ show o ++ " " ++ show r
@@ -39,7 +40,6 @@ instance Show (Expression a) where
   show (Elem l i) = show l ++ "!!" ++ show i
   show (ListDiv l r) = show l ++ "\\" ++ show r
   show (Singleton e) = "[" ++ show e ++ "]"
-  show (Empty _) = "[]"
   show (ToList l) = show l
 
 eval :: ToType a => Expression a -> Store -> a
@@ -47,6 +47,7 @@ eval (Var s) store = case lookup s (runStore store) of
   Just lit -> toType lit
   Nothing -> error $ "variable " ++ s ++ " was not found"
 eval (Lit i) _ = i
+eval (LitAn _ i) _ = i
 eval (IntCalc o l r) store = opAriToFunc o (eval l store) (eval r store)
 eval (BoolCalc t o l r) store = opAriBoolTofunc o (eval l store) (eval r store)
 eval (BinBool o l r) store = binOpBoolToFunc o (eval l store) (eval r store)
@@ -55,7 +56,6 @@ eval (Range l r) store = [eval l store .. eval r store]
 eval (Elem l i) store = eval l store !! eval i store
 eval (ListDiv l r) store = eval l store \\ eval r store
 eval (Singleton e) store = [eval e store]
-eval (Empty t) _ = []
 eval (ToList l) store = (`eval` store) <$> l
 
 data Expression' a where
@@ -82,3 +82,8 @@ testExp i = Lit (i :: Int)
 testStore = Store $ fromList [("test", I 0), ("sec", I 6)]
 
 testEval = eval (testExp 2) testStore
+
+testParse [] = Assign "x" $ Lit 'a'
+testParse s = Assign "x" $ Lit r
+  where
+    r = read s :: Int
