@@ -156,17 +156,6 @@ typecheck (UToList l) store = do
     else do
       Nothing
 
-data EQ a b where
-  Refl :: EQ a a
-
-equalType :: Type a -> Type b -> Maybe (EQ a b)
-equalType IType IType = Just Refl
-equalType CType CType = Just Refl
-equalType BType BType = Just Refl
-equalType (LType IType) (LType IType) = Just Refl
-equalType (LType CType) (LType CType) = Just Refl
-equalType (LType BType) (LType BType) = Just Refl
-
 calcSolution :: UExpression -> Store -> Literal
 calcSolution exp store = case typecheck exp store of
   Just (e ::: _) -> toLiteral $ eval e store
@@ -231,10 +220,12 @@ uCondition (UCChoose p l r) store =
 
 data UObserveLanguage
   = UORet UExpression
-  | UOUni [UExpression]
+  | UOUni UExpression
   | UOChoose Prob UExpression UExpression
 
 uObservation :: UObserveLanguage -> Store -> Dist Literal
 uObservation (UORet e) store = return $ calcSolution e store
-uObservation (UOUni l) store = uniform [calcSolution e store | e <- l]
+uObservation (UOUni e) store = case calcSolution e store of
+  (L l) -> uniform l
+  _ -> error "uniform needs a list"
 uObservation (UOChoose p l r) store = choose p (calcSolution l store) (calcSolution r store)
