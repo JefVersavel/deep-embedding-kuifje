@@ -1,4 +1,4 @@
-module PrettyPrinting where
+module CodePaper.PrettyPrinting where
 
 import Data.Map
 import Language.Kuifje.Distribution

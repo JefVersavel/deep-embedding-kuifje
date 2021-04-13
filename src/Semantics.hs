@@ -16,4 +16,4 @@ hysemBobby (If c p q r) = conditional (condition c) (hysemBobby p) (hysemBobby q
 hysemBobby (While c p q) =
   let wh = conditional (condition c) (hysemBobby p ==> wh) (hysemBobby q)
    in wh
-hysemBobby (Observe f p) = hobsem (observation f) ==> hysemBobby p
+hysemBobby (Observe f p) = hobsem (observation' f) ==> hysemBobby p

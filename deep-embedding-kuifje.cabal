@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: bd93df94714bca7b8141d77d3b437430bbbedd488f688c188d83606065f32aa1
+-- hash: 1e7655e12b9b9abb013559df09178064772bad068f53f9baae4dde8a29c27b73
 
 name:           deep-embedding-kuifje
 version:        0.1.0.0
@@ -30,25 +30,26 @@ library
       Arithmetic
       Boolean
       CharComparison
-      DistCalculations
-      EmbeddingV10
-      EmbeddingV11
-      EmbeddingV12
-      EmbeddingV13
-      EmbeddingV14
-      EmbeddingV20
-      EmbeddingV30
+      CodePaper.DistCalculations
+      CodePaper.EmbeddingV10
+      CodePaper.EmbeddingV11
+      CodePaper.EmbeddingV12
+      CodePaper.EmbeddingV13
+      CodePaper.EmbeddingV14
+      CodePaper.EmbeddingV20
+      CodePaper.EmbeddingV30
+      CodePaper.PrettyPrinting
+      Examples.Monty
+      Examples.Password
+      Examples.ReadMeExample
+      Examples.ReadMeExampleKuifje
+      Examples.RunExamples
+      Examples.SideChannel
       Expression
       Language
       ListComparison
-      Monty
       Parsing
-      Password
-      PrettyPrinting
-      ReadMeExample
-      ReadMeExampleKuifje
       Semantics
-      SideChannel
       State
       Syntax
       Test

@@ -1,4 +1,4 @@
-module EmbeddingV12 where
+module CodePaper.EmbeddingV13 where
 
 import Control.Monad.State.Lazy
 import qualified Data.Map as M
@@ -11,6 +11,8 @@ data CL
   | Update StoreManipulation CL
   | If BL CL CL CL
   | While BL CL CL
+  | ReturnI Arithmetic
+  | ReturnB BL
 
 data BL
   = E Arithmetic Arithmetic
@@ -32,6 +34,14 @@ data Arithmetic
   | Lit Int
 
 data StoreManipulation = Set String Arithmetic
+
+data Type = B Bool | I Int
+
+instance Show Type where
+  show (B b) = show b
+  show (I i) = show i
+
+type ReturnType = Maybe Type
 
 evalBL :: BL -> State S Bool
 evalBL (E l r) = do
@@ -102,6 +112,8 @@ instance Semigroup CL where
   Update f p <> k = Update f (p <> k)
   If c p q r <> k = If c p q (r <> k)
   While c p q <> k = While c p (q <> k)
+  ReturnI a <> k = ReturnI a
+  ReturnB b <> k = ReturnB b
 
 skip :: CL
 skip = Skip
@@ -115,27 +127,37 @@ cond c p q = If c p q skip
 while :: BL -> CL -> CL
 while c p = While c p skip
 
-conditional :: BL -> State S () -> State S () -> State S ()
+conditional :: BL -> State S ReturnType -> State S ReturnType -> State S ReturnType
 conditional test trueEval falseEval = do
   bool <- evalBL test
   if bool
     then trueEval
     else falseEval
 
-eval :: CL -> State S ()
-eval Skip = return ()
+eval :: CL -> State S ReturnType
+eval Skip = return Nothing
 eval (Update storeMan rest) = do
   evalStoreManipulation storeMan
   eval rest
 eval (If test ifCL thenCL rest) = do
-  conditional test (eval ifCL) (eval thenCL)
-  eval rest
+  result <- conditional test (eval ifCL) (eval thenCL)
+  case result of
+    Nothing -> eval rest
+    Just r -> return $ Just r
 eval (While test whileCL rest) =
   conditional test trueEval (eval rest)
   where
     trueEval = do
-      eval whileCL
-      eval (While test whileCL rest)
+      result <- eval whileCL
+      case result of
+        Nothing -> eval (While test whileCL rest)
+        Just r -> return $ Just r
+eval (ReturnI ari) = do
+  value <- evalArithmetic ari
+  return $ Just (I value)
+eval (ReturnB bool) = do
+  value <- evalBL bool
+  return $ Just (B value)
 
 example1 :: CL
 example1 =
@@ -145,10 +167,11 @@ example1 =
       ( update (Set "y" (Add (Var "y") (Var "x")))
           <> update (Set "x" (Sub (Var "x") (Lit 1)))
       )
+    <> ReturnI (Var "y")
 
-mainEval :: CL -> S -> S
-mainEval expr = execState (eval expr)
+mainEval :: CL -> S -> (ReturnType, S)
+mainEval expr = runState (eval expr)
 
-testV12 = mainEval example1 start
+testV13 = mainEval example1 start
   where
     start = M.insert "x" 6 M.empty

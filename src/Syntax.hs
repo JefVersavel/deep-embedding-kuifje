@@ -15,7 +15,7 @@ data Bobby where
   Update :: UpdateLanguage -> Bobby -> Bobby
   If :: ConditionLanguage -> Bobby -> Bobby -> Bobby -> Bobby
   While :: ConditionLanguage -> Bobby -> Bobby -> Bobby
-  Observe :: (Ord a, ToType a) => ObserveLanguage a -> Bobby -> Bobby
+  Observe :: ObserveLanguage' -> Bobby -> Bobby
 
 instance Semigroup Bobby where
   Skip <> k = k
@@ -41,5 +41,5 @@ cond :: ConditionLanguage -> Bobby -> Bobby -> Bobby
 cond c p q = If c p q skip
 
 -- | Return an 'Observe' instruction.
-observe :: (Ord a, ToType a) => ObserveLanguage a -> Bobby
+observe :: ObserveLanguage' -> Bobby
 observe o = Observe o skip

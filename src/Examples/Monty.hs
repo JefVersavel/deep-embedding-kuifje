@@ -1,4 +1,4 @@
-module Monty where
+module Examples.Monty where
 
 import Arithmetic
 import Boolean
@@ -17,7 +17,7 @@ initStore :: Char -> Store
 initStore c = Store $ fromList [("door", toLiteral c)]
 
 hall :: Char -> Bobby
-hall chosenDoor = observe (OUni CType $ ListDiv (Lit "abc") (ToList [Var "door", Lit chosenDoor]))
+hall chosenDoor = observe (OUni' CType $ ListDiv (Lit "abc") (ToList [Var "door", Lit chosenDoor]))
 
 doors :: Dist Store
 doors = uniform [initStore 'a', initStore 'b', initStore 'c']

@@ -1,17 +1,17 @@
 {-# LANGUAGE TupleSections #-}
 {-# LANGUAGE TypeOperators #-}
 
-module EmbeddingV30 where
+module CodePaper.EmbeddingV30 where
 
+import CodePaper.DistCalculations
+import qualified CodePaper.PrettyPrinting as P
 import qualified Control.Monad as C
 import Data.List
 import qualified Data.Map as M
 import Data.Maybe
 import Data.Semigroup as Semi
-import DistCalculations
 import Language.Kuifje.Distribution as D
 import Language.Kuifje.PrettyPrint
-import qualified PrettyPrinting as P
 
 type S = M.Map String Int
 

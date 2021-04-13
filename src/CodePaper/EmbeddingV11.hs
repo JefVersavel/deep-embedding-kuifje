@@ -1,4 +1,4 @@
-module EmbeddingV11 where
+module CodePaper.EmbeddingV11 where
 
 import qualified Data.Map as M
 import Data.Semigroup as Semi

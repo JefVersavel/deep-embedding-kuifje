@@ -1,0 +1,27 @@
+module ReadMeExampleKuifje where
+
+import Arithmetic
+import Boolean
+import Data.Map hiding (update)
+import Data.Maybe
+import Expression
+import Language.Kuifje.Distribution
+import Language.Kuifje.Semantics
+import Language.Kuifje.Syntax
+import State
+import Type
+import Prelude hiding (lookup, return, fmap)
+
+program :: Kuifje Store
+program =
+  update (return . execute ((IType, "y") := Lit 0))
+    <> while
+      (return . eval (BoolCalc IType G (Var "x") (Lit 0)))
+      ( update
+          (return . execute (Assign "y" (IntCalc Add (Var "x") (Var "y"))))
+          <> update
+            (return . execute (Assign "x" (IntCalc Add (Var "x") (Lit 1))))
+      )
+
+project :: Dist (Dist Store) -> Dist (Dist Literal)
+project = fmap (fmap (fromJust . lookup "y" . runStore))

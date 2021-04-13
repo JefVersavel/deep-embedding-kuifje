@@ -1,18 +1,19 @@
-module EmbeddingV13 where
+module CodePaper.EmbeddingV14 where
 
 import Control.Monad.State.Lazy
 import qualified Data.Map as M
 import Data.Semigroup as Semi
 
-type S = M.Map String Int
+type S = M.Map String Type
 
 data CL
   = Skip
   | Update StoreManipulation CL
   | If BL CL CL CL
   | While BL CL CL
-  | ReturnI Arithmetic
-  | ReturnB BL
+  | Return Expression
+
+data Expression = Boolean BL | Integer Arithmetic
 
 data BL
   = E Arithmetic Arithmetic
@@ -25,15 +26,16 @@ data BL
   | Not BL
   | Fls
   | Tru
+  | VarB String
 
 data Arithmetic
   = Add Arithmetic Arithmetic
   | Sub Arithmetic Arithmetic
   | Mul Arithmetic Arithmetic
-  | Var String
+  | VarI String
   | Lit Int
 
-data StoreManipulation = Set String Arithmetic
+data StoreManipulation = Set String Expression
 
 data Type = B Bool | I Int
 
@@ -42,6 +44,14 @@ instance Show Type where
   show (I i) = show i
 
 type ReturnType = Maybe Type
+
+evalExpression :: Expression -> State S Type
+evalExpression (Boolean be) = do
+  value <- evalBL be
+  return $ B value
+evalExpression (Integer ae) = do
+  value <- evalArithmetic ae
+  return $ I value
 
 evalBL :: BL -> State S Bool
 evalBL (E l r) = do
@@ -77,6 +87,17 @@ evalBL (Not l) = do
   return $ not left
 evalBL Fls = return False
 evalBL Tru = return True
+evalBL (VarB name) = do
+  state <- get
+  case M.lookup name state of
+    Just (B n) -> return n
+    Just (I n) ->
+      error
+        ("Variable " ++ name ++ " is of type Int but Bool was expected")
+    Nothing ->
+      error
+        ( "Variable " ++ show name ++ " is not defined."
+        )
 
 evalArithmetic :: Arithmetic -> State S Int
 evalArithmetic (Add l r) = do
@@ -91,10 +112,13 @@ evalArithmetic (Mul l r) = do
   left <- evalArithmetic l
   right <- evalArithmetic r
   return $ left * right
-evalArithmetic (Var name) = do
+evalArithmetic (VarI name) = do
   state <- get
   case M.lookup name state of
-    Just n -> return n
+    Just (I n) -> return n
+    Just (B n) ->
+      error
+        ("Variable " ++ name ++ " is of type Bool but Int was expected")
     Nothing ->
       error
         ( "Variable " ++ show name ++ " is not defined."
@@ -102,8 +126,8 @@ evalArithmetic (Var name) = do
 evalArithmetic (Lit i) = return i
 
 evalStoreManipulation :: StoreManipulation -> State S ()
-evalStoreManipulation (Set name ari) = do
-  value <- evalArithmetic ari
+evalStoreManipulation (Set name expr) = do
+  value <- evalExpression expr
   state <- get
   put $ M.insert name value state
 
@@ -112,8 +136,7 @@ instance Semigroup CL where
   Update f p <> k = Update f (p <> k)
   If c p q r <> k = If c p q (r <> k)
   While c p q <> k = While c p (q <> k)
-  ReturnI a <> k = ReturnI a
-  ReturnB b <> k = ReturnB b
+  Return e <> k = Return e
 
 skip :: CL
 skip = Skip
@@ -152,26 +175,39 @@ eval (While test whileCL rest) =
       case result of
         Nothing -> eval (While test whileCL rest)
         Just r -> return $ Just r
-eval (ReturnI ari) = do
-  value <- evalArithmetic ari
-  return $ Just (I value)
-eval (ReturnB bool) = do
-  value <- evalBL bool
-  return $ Just (B value)
+eval (Return expr) = do
+  value <- evalExpression expr
+  return $ Just value
+
+int :: Int -> Expression
+int i = Integer $ Lit i
+
+true :: Expression
+true = Boolean Tru
+
+false :: Expression
+false = Boolean Fls
+
+intVar :: String -> Expression
+intVar name = Integer $ VarI name
+
+boolVar :: String -> Expression
+boolVar name = Boolean $ VarB name
 
 example1 :: CL
 example1 =
-  update (Set "y" (Lit 0))
+  update (Set "y" (int 0))
+    <> update (Set "z" true)
     <> while
-      (G (Var "x") (Lit 0))
-      ( update (Set "y" (Add (Var "y") (Var "x")))
-          <> update (Set "x" (Sub (Var "x") (Lit 1)))
+      (G (VarI "x") (Lit 0))
+      ( update (Set "y" (Integer $ Add (VarI "y") (VarI "x")))
+          <> update (Set "x" (Integer $ Sub (VarI "x") (Lit 1)))
       )
-    <> ReturnI (Var "y")
+    <> Return (intVar "y")
 
 mainEval :: CL -> S -> (ReturnType, S)
 mainEval expr = runState (eval expr)
 
-testV13 = mainEval example1 start
+testV14 = mainEval example1 start
   where
-    start = M.insert "x" 6 M.empty
+    start = M.insert "x" (I 6) M.empty

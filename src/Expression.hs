@@ -22,10 +22,10 @@ data Expression a where
   BinBool :: BinOpBool -> Expression Bool -> Expression Bool -> Expression Bool
   UniBool :: UnOpBool -> Expression Bool -> Expression Bool
   Range :: (ToType a, Enum a, Show a) => Expression a -> Expression a -> Expression [a]
-  Elem :: (ToType a, Enum a, Show a) => Expression [a] -> Expression Int -> Expression a
+  Elem :: (ToType a, Show a) => Expression [a] -> Expression Int -> Expression a
   ListDiv :: (ToType a, Eq a, Show a) => Expression [a] -> Expression [a] -> Expression [a]
   Singleton :: (ToType a) => Expression a -> Expression [a]
-  Empty :: (ToType a) => Expression [a]
+  Empty :: (ToType a) => Type a -> Expression [a]
   ToList :: (ToType a) => [Expression a] -> Expression [a]
 
 eval :: ToType a => Expression a -> Store -> a
@@ -41,7 +41,7 @@ eval (Range l r) store = [eval l store .. eval r store]
 eval (Elem l i) store = eval l store !! eval i store
 eval (ListDiv l r) store = eval l store \\ eval r store
 eval (Singleton e) store = [eval e store]
-eval Empty _ = []
+eval (Empty t) _ = []
 eval (ToList l) store = (`eval` store) <$> l
 
 data Expression' a where
@@ -49,15 +49,18 @@ data Expression' a where
   Add' :: Expression' Int -> Expression' Int -> Expression' Int
   Equal :: Expression' Int -> Expression' Int -> Expression' Bool
 
-data Statement where
-  Assign :: (ToType a) => String -> Expression a -> Statement
-  AssignAn :: (ToType a) => Type a -> String -> Expression a -> Statement
+data Statement
+  = forall a. ToType a => Assign String (Expression a)
+  | forall a. ToType a => AssignAn (Type a) String (Expression a)
+  | forall a. ToType a => (:=) (Type a, String) (Expression a)
 
 execute :: Statement -> Store -> Store
 execute (Assign s e) store =
   Store $
     insert s (toLiteral $ eval e store) (runStore store)
 execute (AssignAn t s e) store =
+  Store $ insert s (toLiteral $ eval e store) (runStore store)
+execute ((t, s) := e) store =
   Store $ insert s (toLiteral $ eval e store) (runStore store)
 
 testExp i = Lit (i :: Int)

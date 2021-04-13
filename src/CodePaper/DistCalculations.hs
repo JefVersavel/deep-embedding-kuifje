@@ -1,4 +1,4 @@
-module DistCalculations where
+module CodePaper.DistCalculations where
 
 import Data.Map as M
 import Language.Kuifje.Distribution as D

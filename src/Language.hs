@@ -1,4 +1,3 @@
-{-# LANGUAGE ExistentialQuantification #-}
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE KindSignatures #-}
 
@@ -11,11 +10,11 @@ import State
 import Type
 import Prelude hiding (return)
 
-data UpdateLanguage where
-  URet :: Statement -> UpdateLanguage
-  UUni :: [Statement] -> UpdateLanguage
-  UChoose :: Prob -> Statement -> Statement -> UpdateLanguage
-  UUniAssign :: ToType a => Type a -> String -> Expression [a] -> UpdateLanguage
+data UpdateLanguage
+  = URet Statement
+  | UUni [Statement]
+  | UChoose Prob Statement Statement
+  | forall a. ToType a => UUniAssign (Type a) String (Expression [a])
 
 updateStatement :: UpdateLanguage -> Store -> Dist Store
 updateStatement (URet s) store = return $ execute s store
@@ -42,3 +41,13 @@ observation :: (ToType a, Ord a) => ObserveLanguage a -> Store -> Dist a
 observation (ORet t e) store = return $ eval e store
 observation (OUni t l) store = uniform $ eval l store
 observation (OChoose t p l r) store = choose p (eval l store) (eval r store)
+
+data ObserveLanguage'
+  = forall a. ToType a => ORet' (Type a) (Expression a)
+  | forall a. ToType a => OUni' (Type a) (Expression [a])
+  | forall a. ToType a => OChoose' (Type a) Prob (Expression a) (Expression a)
+
+observation' :: ObserveLanguage' -> Store -> Dist Literal
+observation' (ORet' t e) store = return $ toLiteral $ eval e store
+observation' (OUni' t l) store = uniform $ [toLiteral e | e <- eval l store]
+observation' (OChoose' t p l r) store = choose p (toLiteral $ eval l store) (toLiteral $ eval r store)

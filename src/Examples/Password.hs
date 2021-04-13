@@ -1,4 +1,4 @@
-module Password where
+module Examples.Password where
 
 import Arithmetic
 import Boolean
@@ -117,7 +117,7 @@ basicN n =
           )
           <> update (URet $ Assign "i" $ IntCalc Add (Var "i") (Lit 1))
       )
-    <> observe (ORet BType (Var "ans"))
+    <> observe (ORet' BType (Var "ans"))
 
 hyperN :: String -> String -> Dist (Dist Literal)
 hyperN pw gs = projectPw (hysemBobby (basicN (length pw)) (initialDist pw gs))
@@ -129,7 +129,7 @@ basicR n =
     <> update (URet $ AssignAn IType "i" $ Lit 0)
     <> update (URet $ Assign "ans" $ Lit True)
     <> while
-      (CRet $ BinBool And (Var "ans") (BoolCalc (LType IType) NE (Var "l") Empty))
+      (CRet $ BinBool And (Var "ans") (BoolCalc (LType IType) NE (Var "l") (Empty IType)))
       ( update
           (UUniAssign IType "i" (Var "l"))
           <> update
@@ -147,7 +147,7 @@ basicR n =
             )
           <> update (URet $ AssignAn (LType IType) "l" $ ListDiv (Var "l") (Singleton (Var "i")))
       )
-    <> observe (ORet BType (Var "ans"))
+    <> observe (ORet' BType (Var "ans"))
 
 hyperR :: String -> String -> Dist (Dist Literal)
 hyperR pw gs = projectPw (hysemBobby (basicR (length pw)) (initialDist pw gs))
@@ -159,7 +159,7 @@ basicS n =
     <> update (URet $ AssignAn IType "i" $ Lit 0)
     <> update (URet $ Assign "ans" $ Lit True)
     <> while
-      (CRet $ BinBool And (Var "ans") (BoolCalc (LType IType) NE (Var "l") Empty))
+      (CRet $ BinBool And (Var "ans") (BoolCalc (LType IType) NE (Var "l") (Empty IType)))
       ( update
           (UUniAssign IType "i" (Var "l"))
           <> cond
@@ -174,7 +174,7 @@ basicS n =
             skip
           <> update (URet $ AssignAn (LType IType) "l" $ ListDiv (Var "l") (Singleton (Var "i")))
       )
-    <> observe (ORet BType (Var "ans"))
+    <> observe (ORet' BType (Var "ans"))
 
 hyperS :: String -> String -> Dist (Dist Literal)
 hyperS pw gs = projectPw (hysemBobby (basicS (length pw)) (initialDist pw gs))

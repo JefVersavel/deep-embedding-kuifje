@@ -1,4 +1,4 @@
-module EmbeddingV10 where
+module CodePaper.EmbeddingV10 where
 
 data S = S {first :: Int, second :: Int}
   deriving (Show)

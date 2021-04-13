@@ -1,4 +1,4 @@
-module ReadMeExample where
+module Examples.ReadMeExample where
 
 import Arithmetic
 import Boolean
@@ -18,7 +18,7 @@ initStore x = Store $ fromList [("x", I x), ("y", I 0)]
 
 program :: Bobby
 program =
-  update (URet $ AssignAn IType "y" $ Lit 0)
+  update (URet $ (IType, "y") := Lit 0)
     <> while
       (CRet $ BoolCalc IType G (Var "x") (Lit 0))
       ( update
@@ -30,5 +30,5 @@ program =
 project :: Dist (Dist Store) -> Dist (Dist Literal)
 project = fmap (fmap (fromJust . lookup "y" . runStore))
 
-hyper :: Dist (Dist Store)
-hyper = hysemBobby program (uniform [initStore x | x <- [5 .. 8]])
+hyper :: Dist (Dist Literal)
+hyper = project $ hysemBobby program (uniform [initStore x | x <- [5 .. 8]])

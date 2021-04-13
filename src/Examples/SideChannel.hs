@@ -1,4 +1,4 @@
-module SideChannel where
+module Examples.SideChannel where
 
 import Arithmetic
 import Boolean
