@@ -34,107 +34,120 @@ instance Show TypedExpression where
   show (e ::: t) = show t ++ " " ++ show e
 
 data SimpleType = IST | CST | BST | ILST | CLST | BLST
-  deriving (Eq)
+  deriving (Eq, Show)
 
-toSimpleType :: Type a -> Maybe SimpleType
-toSimpleType IType = Just IST
-toSimpleType CType = Just CST
-toSimpleType BType = Just BST
-toSimpleType (LType IType) = Just ILST
-toSimpleType (LType CType) = Just CLST
-toSimpleType (LType BType) = Just BLST
-toSimpleType _ = Nothing
+toSimpleType :: Type a -> Either String SimpleType
+toSimpleType IType = Right IST
+toSimpleType CType = Right CST
+toSimpleType BType = Right BST
+toSimpleType (LType IType) = Right ILST
+toSimpleType (LType CType) = Right CLST
+toSimpleType (LType BType) = Right BLST
+toSimpleType _ = Left "Nested lists are not supported"
 
 literalToSimpleType :: Literal -> SimpleType
 literalToSimpleType (I i) = IST
 literalToSimpleType (C c) = CST
 literalToSimpleType (B b) = BST
 
-literalToTypedExpression :: Literal -> Maybe TypedExpression
-literalToTypedExpression (I i) = Just $ Lit i ::: IType
-literalToTypedExpression (C c) = Just $ Lit c ::: CType
-literalToTypedExpression (B b) = Just $ Lit b ::: BType
+literalToTypedExpression :: Literal -> Either String TypedExpression
+literalToTypedExpression (I i) = Right $ Lit i ::: IType
+literalToTypedExpression (C c) = Right $ Lit c ::: CType
+literalToTypedExpression (B b) = Right $ Lit b ::: BType
 literalToTypedExpression (L l) = do
   let types =
         ( \case
-            Just (_ ::: t) -> toSimpleType t
-            Nothing -> Nothing
+            Right (_ ::: t) -> toSimpleType t
+            Left m -> Left m
         )
           <$> [literalToTypedExpression lit | lit <- l]
   if length (nub types) == 1
     then do
       let toTyped x = case x of
-            Just IST -> Just $ Lit (toType $ L l) ::: LType IType
-            Just CST -> Just $ Lit (toType $ L l) ::: LType CType
-            Just BST -> Just $ Lit (toType $ L l) ::: LType BType
-            _ -> Nothing
+            Right IST -> Right $ Lit (toType $ L l) ::: LType IType
+            Right CST -> Right $ Lit (toType $ L l) ::: LType CType
+            Right BST -> Right $ Lit (toType $ L l) ::: LType BType
+            _ -> Left "Could not make list, because the type was not found"
       toTyped $ head types
     else do
-      Nothing
+      Left "Cannot have lists with multiple types"
 
-typecheck :: UExpression -> Store -> Maybe TypedExpression
+typecheck :: UExpression -> Store -> Either String TypedExpression
 typecheck (UVar var) store = do
-  lookedup <- lookup var (runStore store)
-  literalToTypedExpression lookedup
+  case lookup var (runStore store) of
+    Just lookedup -> literalToTypedExpression lookedup
+    Nothing -> Left "Variable was not found"
 typecheck (ULit i) _ = do
-  Just $ Lit i ::: getType i
+  Right $ Lit i ::: getType i
 typecheck (UIntCalc o l r) store = do
-  (left ::: IType) <- typecheck l store
-  (right ::: IType) <- typecheck r store
-  Just $ IntCalc o left right ::: IType
+  (left ::: tl) <- typecheck l store
+  (right ::: tr) <- typecheck r store
+  case (tl, tr) of
+    (IType, IType) -> Right $ IntCalc o left right ::: IType
+    _ -> Left "IntCalc needs two Ints"
 typecheck (UBoolCalc o l r) store = do
   (left ::: tl) <- typecheck l store
   (right ::: tr) <- typecheck r store
   case (tl, tr) of
-    (IType, IType) -> Just $ BoolCalc IType o left right ::: BType
-    (BType, BType) -> Just $ BoolCalc BType o left right ::: BType
-    (CType, CType) -> Just $ BoolCalc CType o left right ::: BType
-    (LType IType, LType IType) -> Just $ BoolCalc (LType IType) o left right ::: BType
-    (LType CType, LType CType) -> Just $ BoolCalc (LType CType) o left right ::: BType
-    (LType BType, LType BType) -> Just $ BoolCalc (LType BType) o left right ::: BType
-    _ -> Nothing
+    (IType, IType) -> Right $ BoolCalc IType o left right ::: BType
+    (BType, BType) -> Right $ BoolCalc BType o left right ::: BType
+    (CType, CType) -> Right $ BoolCalc CType o left right ::: BType
+    (LType IType, LType IType) -> Right $ BoolCalc (LType IType) o left right ::: BType
+    (LType CType, LType CType) -> Right $ BoolCalc (LType CType) o left right ::: BType
+    (LType BType, LType BType) -> Right $ BoolCalc (LType BType) o left right ::: BType
+    _ -> Left "boolcalc does not work with nested lists"
 typecheck (UBinBool o l r) store = do
-  (left ::: BType) <- typecheck l store
-  (right ::: BType) <- typecheck r store
-  Just $ BinBool o left right ::: BType
+  (left ::: tl) <- typecheck l store
+  (right ::: tr) <- typecheck r store
+  case (tl, tr) of
+    (BType, BType) -> Right $ BinBool o left right ::: BType
+    _ -> Left "BinBool needs to Bools"
 typecheck (UUniBool o e) store = do
-  (expr ::: BType) <- typecheck e store
-  Just $ UniBool o expr ::: BType
+  (expr ::: t) <- typecheck e store
+  case t of
+    BType -> Right $ UniBool o expr ::: BType
+    _ -> Left "UniBool needs a Bool"
 typecheck (URange b e) store = do
   (left ::: tl) <- typecheck b store
   (right ::: tr) <- typecheck e store
   case (tl, tr) of
-    (IType, IType) -> Just $ Range left right ::: LType IType
-    (CType, CType) -> Just $ Range left right ::: LType CType
-    (BType, BType) -> Just $ Range left right ::: LType BType
-    _ -> Nothing
+    (IType, IType) -> Right $ Range left right ::: LType IType
+    (CType, CType) -> Right $ Range left right ::: LType CType
+    (BType, BType) -> Right $ Range left right ::: LType BType
+    _ -> Left "Range only works with Int, Char and Bool"
 typecheck (UElem l i) store = do
-  (list ::: LType t) <- typecheck l store
-  (index ::: IType) <- typecheck i store
-  case t of
-    IType -> Just $ Elem list index ::: IType
-    CType -> Just $ Elem list index ::: CType
-    BType -> Just $ Elem list index ::: BType
-    _ -> Nothing
-typecheck (UListDiv r l) store = do
-  (right ::: LType tl) <- typecheck r store
-  (left ::: LType tr) <- typecheck l store
+  (list ::: tl) <- typecheck l store
+  (index ::: tr) <- typecheck i store
   case (tl, tr) of
-    (IType, IType) -> Just $ ListDiv right left ::: LType IType
-    (CType, CType) -> Just $ ListDiv right left ::: LType CType
-    (BType, BType) -> Just $ ListDiv right left ::: LType BType
-    _ -> Nothing
+    (LType t, IType) ->
+      case t of
+        IType -> Right $ Elem list index ::: IType
+        CType -> Right $ Elem list index ::: CType
+        BType -> Right $ Elem list index ::: BType
+        _ -> Left "Elem only works with Int, Char and Bool lists"
+    _ -> Left "First argument of Elem needs to be a List and second needs to be an Int"
+typecheck (UListDiv r l) store = do
+  (right ::: tll) <- typecheck r store
+  (left ::: trr) <- typecheck l store
+  case (tll, trr) of
+    (LType tl, LType tr) ->
+      case (tl, tr) of
+        (IType, IType) -> Right $ ListDiv right left ::: LType IType
+        (CType, CType) -> Right $ ListDiv right left ::: LType CType
+        (BType, BType) -> Right $ ListDiv right left ::: LType BType
+        _ -> Left "ListDiv only works with Int, Char and Bool"
+    _ -> Left "ListDiv needs two lists as arguments"
 typecheck (USingleton e) store = do
   (expr ::: t) <- typecheck e store
   case t of
-    IType -> Just $ Singleton expr ::: LType IType
-    CType -> Just $ Singleton expr ::: LType CType
-    BType -> Just $ Singleton expr ::: LType BType
+    IType -> Right $ Singleton expr ::: LType IType
+    CType -> Right $ Singleton expr ::: LType CType
+    BType -> Right $ Singleton expr ::: LType BType
 typecheck (UToList l) store = do
   let types =
         ( \case
-            Just (_ ::: t) -> toSimpleType t
-            Nothing -> Nothing
+            Right (_ ::: t) -> toSimpleType t
+            Left m -> Left m
         )
           . (`typecheck` store)
           <$> l
@@ -142,24 +155,24 @@ typecheck (UToList l) store = do
   if length (nub types) == 1
     then do
       let toTyped x = case x of
-            Just IST ->
-              Just $
+            Right IST ->
+              Right $
                 ToList [Lit i | (I i) <- literals] ::: LType IType
-            Just CST ->
-              Just $
+            Right CST ->
+              Right $
                 ToList [Lit i | (C i) <- literals] ::: LType CType
-            Just BST ->
-              Just $
+            Right BST ->
+              Right $
                 ToList [Lit i | (B i) <- literals] ::: LType BType
-            _ -> Nothing
+            _ -> Left "only list of Int, Char and Bool can be generated, nested lists are not supported"
       toTyped $ head types
     else do
-      Nothing
+      Left "ONly lists with one type are allowed"
 
 calcSolution :: UExpression -> Store -> Literal
 calcSolution exp store = case typecheck exp store of
-  Just (e ::: _) -> toLiteral $ eval e store
-  Nothing -> error "expression did not compile"
+  Right (e ::: _) -> toLiteral $ eval e store
+  Left m -> error m
 
 data UStatement = UAssign String UExpression
 
