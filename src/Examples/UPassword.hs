@@ -22,7 +22,7 @@ makeState pw gs =
     fromList
       [ ("pw", toLiteral pw),
         ("gs", toLiteral gs),
-        ("l", L []),
+        ("l", L $ ILst []),
         ("i", I 0),
         ("ans", B True)
       ]

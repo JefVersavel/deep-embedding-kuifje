@@ -55,22 +55,10 @@ literalToTypedExpression (I i) = Right $ Lit i ::: IType
 literalToTypedExpression (C c) = Right $ Lit c ::: CType
 literalToTypedExpression (B b) = Right $ Lit b ::: BType
 literalToTypedExpression (L l) = do
-  let types =
-        ( \case
-            Right (_ ::: t) -> toSimpleType t
-            Left m -> Left m
-        )
-          <$> [literalToTypedExpression lit | lit <- l]
-  if length (nub types) == 1
-    then do
-      let toTyped x = case x of
-            Right IST -> Right $ Lit (toType $ L l) ::: LType IType
-            Right CST -> Right $ Lit (toType $ L l) ::: LType CType
-            Right BST -> Right $ Lit (toType $ L l) ::: LType BType
-            _ -> Left "Could not make list, because the type was not found"
-      toTyped $ head types
-    else do
-      Left "Cannot have lists with multiple types"
+  case l of
+    ILst il -> Right $ Lit il ::: LType IType
+    CLst il -> Right $ Lit il ::: LType CType
+    BLst il -> Right $ Lit il ::: LType BType
 
 typecheck :: UExpression -> Store -> Either String TypedExpression
 typecheck (UVar var) store = do
@@ -195,19 +183,11 @@ uUpdateStatement (UUChoose p l r) store =
 uUpdateStatement (UUUniAssign s e) store =
   case calcSolution e store of
     L l ->
-      let types = literalToSimpleType <$> l
-       in if length (nub types) == 1
-            then case head types of
-              IST ->
-                uniform
-                  [uExecute (UAssign s (ULit ev)) store | (I ev) <- l]
-              CST ->
-                uniform
-                  [uExecute (UAssign s (ULit ev)) store | (C ev) <- l]
-              BST ->
-                uniform
-                  [uExecute (UAssign s (ULit ev)) store | (B ev) <- l]
-            else error "not good"
+      case l of
+        ILst il -> uniform [uExecute (UAssign s (ULit ev)) store | ev <- il]
+        CLst il -> uniform [uExecute (UAssign s (ULit ev)) store | ev <- il]
+        BLst il -> uniform [uExecute (UAssign s (ULit ev)) store | ev <- il]
+        _ -> error "nested lists are not supported yet"
     _ -> error "not good"
 
 statTest = uUpdateStatement (UURet (UAssign "x" (ULit 'a'))) (Store empty)
@@ -239,6 +219,10 @@ data UObserveLanguage
 uObservation :: UObserveLanguage -> Store -> Dist Literal
 uObservation (UORet e) store = return $ calcSolution e store
 uObservation (UOUni e) store = case calcSolution e store of
-  (L l) -> uniform l
+  (L l) -> case l of
+    ILst il -> uniform $ toLiteral <$> il
+    CLst il -> uniform $ toLiteral <$> il
+    BLst il -> uniform $ toLiteral <$> il
+    _ -> error "nested lists are not supported"
   _ -> error "uniform needs a list"
 uObservation (UOChoose p l r) store = choose p (calcSolution l store) (calcSolution r store)
