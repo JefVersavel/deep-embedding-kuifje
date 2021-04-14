@@ -1,3 +1,4 @@
+{-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE KindSignatures #-}
 
@@ -14,7 +15,7 @@ data UpdateLanguage
   = URet Statement
   | UUni [Statement]
   | UChoose Prob Statement Statement
-  | forall a. (ToType a, Show a) => UUniAssign (Type a) String (Expression [a])
+  | forall a. (ToType a, Show a, ToType [a]) => UUniAssign (Type a) String (Expression [a])
 
 updateStatement :: UpdateLanguage -> Store -> Dist Store
 updateStatement (URet s) store = return $ execute s store
@@ -34,7 +35,7 @@ condition (CChoose p l r) store = choose p (eval l store) (eval r store)
 
 data ObserveLanguage a where
   ORet :: Type a -> Expression a -> ObserveLanguage a
-  OUni :: Type a -> Expression [a] -> ObserveLanguage a
+  OUni :: ToType [a] => Type a -> Expression [a] -> ObserveLanguage a
   OChoose :: Type a -> Prob -> Expression a -> Expression a -> ObserveLanguage a
 
 observation :: (ToType a, Ord a) => ObserveLanguage a -> Store -> Dist a
@@ -44,7 +45,7 @@ observation (OChoose t p l r) store = choose p (eval l store) (eval r store)
 
 data ObserveLanguage'
   = forall a. ToType a => ORet' (Type a) (Expression a)
-  | forall a. ToType a => OUni' (Type a) (Expression [a])
+  | forall a. (ToType a, ToType [a]) => OUni' (Type a) (Expression [a])
   | forall a. ToType a => OChoose' (Type a) Prob (Expression a) (Expression a)
 
 observation' :: ObserveLanguage' -> Store -> Dist Literal

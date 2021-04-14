@@ -1,3 +1,5 @@
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE GADTs #-}
 
 module State where
@@ -14,14 +16,23 @@ newtype Store = Store {runStore :: Map String Literal}
   deriving (Eq, Ord)
 
 -- later add the type to the literal to do typechecking at compiletime
-data Literal = I Int | C Char | B Bool | L [Literal]
+data Literal = I Int | C Char | B Bool | L Lst
   deriving (Eq, Ord)
+
+data Lst = Lst [Lst] | ILst [Int] | CLst [Char] | BLst [Bool]
+  deriving (Eq, Ord, Show)
 
 instance Boxable Literal where
   toBox (I i) = toBox i
   toBox (B b) = toBox b
   toBox (C c) = text $ show c
   toBox (L l) = toBox l
+
+instance Boxable Lst where
+  toBox (Lst l) = toBox l
+  toBox (ILst l) = toBox l
+  toBox (CLst l) = toBox l
+  toBox (BLst l) = toBox l
 
 instance Boxable Store where
   toBox store = tabulate $ HM.elems (HM.mapWithKey lambdaPrint (runStore store))
@@ -60,8 +71,26 @@ instance ToType Bool where
   toLiteral = B
   getType _ = BType
 
-instance ToType a => ToType [a] where
-  toType (L l) = map toType l
+instance ToType [Int] where
+  toType (L (ILst l)) = l
   toType _ = error "wrong type"
-  toLiteral l = L $ map toLiteral l
+  toLiteral l = L $ ILst l
+  getType l = LType IType
+
+instance ToType [Char] where
+  toType (L (CLst l)) = l
+  toType _ = error "wrong type"
+  toLiteral l = L $ CLst l
+  getType l = LType CType
+
+instance ToType [Bool] where
+  toType (L (BLst l)) = l
+  toType _ = error "wrong type"
+  toLiteral l = L $ BLst l
+  getType l = LType BType
+
+instance ToType [a] => ToType [[a]] where
+  toType l = toType l
+  toLiteral l = toLiteral l
+  getType [] = error "cannot infer type of empty list"
   getType a = LType $ getType $ head a
