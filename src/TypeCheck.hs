@@ -9,8 +9,8 @@ import Boolean
 import Data.List hiding (insert, lookup)
 import Data.Map
 import Expression
-import Language.Haskell.TH hiding (Type)
 import Language.Kuifje.Distribution
+import ListCalculations
 import State
 import Type
 import Prelude hiding (lookup, return)
@@ -24,9 +24,20 @@ data UExpression
   | UUniBool UnOpBool UExpression
   | URange UExpression UExpression
   | UElem UExpression UExpression
-  | UListDiv UExpression UExpression
-  | USingleton UExpression
+  | UListCalc ListOp UExpression UExpression
   | UToList [UExpression]
+
+instance Show UExpression where
+  show (UVar s) = s
+  show (ULit i) = show i
+  show (UIntCalc o l r) = show l ++ " " ++ show o ++ " " ++ show r
+  show (UBoolCalc o l r) = show l ++ " " ++ show o ++ " " ++ show r
+  show (UBinBool o l r) = show l ++ " " ++ show o ++ " " ++ show r
+  show (UUniBool o e) = show o ++ " " ++ show e
+  show (URange l r) = "[" ++ show l ++ " .. " ++ show r ++ "]"
+  show (UElem l r) = show l ++ "!!" ++ show r
+  show (UListCalc o l r) = show l ++ " " ++ show o ++ " " ++ show r
+  show (UToList l) = show l
 
 data TypedExpression = forall t. (Show t, ToType t) => (Expression t) ::: (Type t)
 
@@ -114,23 +125,17 @@ typecheck (UElem l i) store = do
         BType -> Right $ Elem list index ::: BType
         _ -> Left "Elem only works with Int, Char and Bool lists"
     _ -> Left "First argument of Elem needs to be a List and second needs to be an Int"
-typecheck (UListDiv r l) store = do
+typecheck (UListCalc o r l) store = do
   (right ::: tll) <- typecheck r store
   (left ::: trr) <- typecheck l store
   case (tll, trr) of
     (LType tl, LType tr) ->
       case (tl, tr) of
-        (IType, IType) -> Right $ ListDiv right left ::: LType IType
-        (CType, CType) -> Right $ ListDiv right left ::: LType CType
-        (BType, BType) -> Right $ ListDiv right left ::: LType BType
+        (IType, IType) -> Right $ ListCalc o right left ::: LType IType
+        (CType, CType) -> Right $ ListCalc o right left ::: LType CType
+        (BType, BType) -> Right $ ListCalc o right left ::: LType BType
         _ -> Left "ListDiv only works with Int, Char and Bool"
     _ -> Left "ListDiv needs two lists as arguments"
-typecheck (USingleton e) store = do
-  (expr ::: t) <- typecheck e store
-  case t of
-    IType -> Right $ Singleton expr ::: LType IType
-    CType -> Right $ Singleton expr ::: LType CType
-    BType -> Right $ Singleton expr ::: LType BType
 typecheck (UToList l) store = do
   let types =
         ( \case

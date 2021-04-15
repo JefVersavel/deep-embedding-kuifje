@@ -1,7 +1,5 @@
 module Arithmetic where
 
-import State
-
 data BinOpAri
   = Add
   | Sub

@@ -24,11 +24,8 @@ dependencies:
 - kuifje
 - containers
 - mtl
-- lens
-- bytestring
-- cereal
 - boxes
-- template-haskell
+- parsec
 
 library:
   source-dirs: src

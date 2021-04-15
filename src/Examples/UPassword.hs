@@ -2,13 +2,12 @@ module Examples.UPassword where
 
 import Arithmetic
 import Boolean
-import CharComparison
 import Data.List (genericIndex, permutations, sortBy, (\\))
 import Data.Map
 import Data.Maybe
 import Language
 import Language.Kuifje.Distribution
-import ListComparison
+import ListCalculations
 import Semantics
 import State
 import Syntax
@@ -142,7 +141,7 @@ basicR n =
                         (UElem (UVar "gs") (UVar "i"))
                     )
             )
-          <> uupdate (UURet $ UAssign "l" $ UListDiv (UVar "l") (USingleton (UVar "i")))
+          <> uupdate (UURet $ UAssign "l" $ UListCalc LDiv (UVar "l") (UToList [UVar "i"]))
       )
     <> uobserve (UORet (UVar "ans"))
 
@@ -168,7 +167,7 @@ basicS n =
             )
             (uupdate (UURet $ UAssign "ans" $ ULit False))
             uskip
-          <> uupdate (UURet $ UAssign "l" $ UListDiv (UVar "l") (USingleton (UVar "i")))
+          <> uupdate (UURet $ UAssign "l" $ UListCalc LDiv (UVar "l") (UToList [UVar "i"]))
       )
     <> uobserve (UORet (UVar "ans"))
 

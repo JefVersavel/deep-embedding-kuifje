@@ -2,14 +2,13 @@ module Examples.Password where
 
 import Arithmetic
 import Boolean
-import CharComparison
 import Data.List (genericIndex, permutations, sortBy, (\\))
 import Data.Map hiding (update)
 import Data.Maybe
 import Expression
 import Language
 import Language.Kuifje.Distribution
-import ListComparison
+import ListCalculations
 import Semantics
 import State
 import Syntax
@@ -145,7 +144,7 @@ basicR n =
                         (Elem (Var "gs") (Var "i"))
                     )
             )
-          <> update (URet $ AssignAn (LType IType) "l" $ ListDiv (Var "l") (Singleton (Var "i")))
+          <> update (URet $ AssignAn (LType IType) "l" $ ListCalc LDiv (Var "l") (ToList [Var "i"]))
       )
     <> observe (ORet' BType (Var "ans"))
 
@@ -172,7 +171,7 @@ basicS n =
             )
             (update (URet $ AssignAn BType "ans" $ Lit False))
             skip
-          <> update (URet $ AssignAn (LType IType) "l" $ ListDiv (Var "l") (Singleton (Var "i")))
+          <> update (URet $ AssignAn (LType IType) "l" $ ListCalc LDiv (Var "l") (ToList [Var "i"]))
       )
     <> observe (ORet' BType (Var "ans"))
 

@@ -7,6 +7,7 @@ import Data.Maybe
 import Expression
 import Language
 import Language.Kuifje.Distribution
+import ListCalculations
 import Semantics
 import State
 import Syntax
@@ -17,7 +18,7 @@ initStore :: Char -> Store
 initStore c = Store $ fromList [("door", toLiteral c)]
 
 hall :: Char -> Bobby
-hall chosenDoor = observe (OUni' CType $ ListDiv (Lit "abc") (ToList [Var "door", Lit chosenDoor]))
+hall chosenDoor = observe (OUni' CType $ ListCalc LDiv (Lit "abc") (ToList [Var "door", Lit chosenDoor]))
 
 doors :: Dist Store
 doors = uniform [initStore 'a', initStore 'b', initStore 'c']

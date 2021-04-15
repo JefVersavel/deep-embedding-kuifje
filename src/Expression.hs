@@ -5,12 +5,11 @@ module Expression where
 
 import Arithmetic
 import Boolean
-import CharComparison
 import Data.List ((\\))
 import Data.Map hiding (map, (\\))
 import Debug.Trace
 import Language.Kuifje.Distribution hiding (map)
-import ListComparison
+import ListCalculations
 import State
 import Type
 import Prelude hiding (lookup, return)
@@ -25,8 +24,7 @@ data Expression a where
   UniBool :: UnOpBool -> Expression Bool -> Expression Bool
   Range :: (ToType a, Enum a, Show a, ToType [a]) => Expression a -> Expression a -> Expression [a]
   Elem :: (ToType a, Show a, ToType [a]) => Expression [a] -> Expression Int -> Expression a
-  ListDiv :: (ToType a, Eq a, Show a) => Expression [a] -> Expression [a] -> Expression [a]
-  Singleton :: (ToType a, Show a) => Expression a -> Expression [a]
+  ListCalc :: (ToType a, Eq a, Show a) => ListOp -> Expression [a] -> Expression [a] -> Expression [a]
   ToList :: (ToType a, Show a) => [Expression a] -> Expression [a]
 
 instance Show (Expression a) where
@@ -39,8 +37,7 @@ instance Show (Expression a) where
   show (UniBool o e) = show o ++ " " ++ show e
   show (Range b e) = "[" ++ show b ++ " .. " ++ show e ++ "]"
   show (Elem l i) = show l ++ "!!" ++ show i
-  show (ListDiv l r) = show l ++ "\\" ++ show r
-  show (Singleton e) = "[" ++ show e ++ "]"
+  show (ListCalc o l r) = show l ++ show o ++ show r
   show (ToList l) = show l
 
 eval :: ToType a => Expression a -> Store -> a
@@ -55,8 +52,7 @@ eval (BinBool o l r) store = binOpBoolToFunc o (eval l store) (eval r store)
 eval (UniBool o b) store = unOpBoolToFunc o $ eval b store
 eval (Range l r) store = [eval l store .. eval r store]
 eval (Elem l i) store = eval l store !! eval i store
-eval (ListDiv l r) store = eval l store \\ eval r store
-eval (Singleton e) store = [eval e store]
+eval (ListCalc o l r) store = listOpToFunc o (eval l store) (eval r store)
 eval (ToList l) store = (`eval` store) <$> l
 
 data Expression' a where
