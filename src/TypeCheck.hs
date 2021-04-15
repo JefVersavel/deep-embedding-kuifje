@@ -30,13 +30,13 @@ data UExpression
 instance Show UExpression where
   show (UVar s) = s
   show (ULit i) = show i
-  show (UIntCalc o l r) = show l ++ " " ++ show o ++ " " ++ show r
-  show (UBoolCalc o l r) = show l ++ " " ++ show o ++ " " ++ show r
-  show (UBinBool o l r) = show l ++ " " ++ show o ++ " " ++ show r
-  show (UUniBool o e) = show o ++ " " ++ show e
+  show (UIntCalc o l r) = "(" ++ show o ++ " " ++ show l ++ " " ++ show r ++ ")"
+  show (UBoolCalc o l r) = "(" ++ show o ++ " " ++ show l ++ " " ++ show r ++ ")"
+  show (UBinBool o l r) = "(" ++ show o ++ " " ++ show l ++ " " ++ show r ++ ")"
+  show (UUniBool o e) = "(" ++ show o ++ " " ++ show e ++ ")"
   show (URange l r) = "[" ++ show l ++ " .. " ++ show r ++ "]"
   show (UElem l r) = show l ++ "!!" ++ show r
-  show (UListCalc o l r) = show l ++ " " ++ show o ++ " " ++ show r
+  show (UListCalc o l r) = "(" ++ show o ++ " " ++ show l ++ " " ++ show r ++ ")"
   show (UToList l) = show l
 
 data TypedExpression = forall t. (Show t, ToType t) => (Expression t) ::: (Type t)
@@ -168,6 +168,7 @@ calcSolution exp store = case typecheck exp store of
   Left m -> error m
 
 data UStatement = UAssign String UExpression
+  deriving (Show)
 
 uExecute :: UStatement -> Store -> Store
 uExecute (UAssign var expr) store =
@@ -179,6 +180,7 @@ data UUpdateLanguage
   | UUUni [UStatement]
   | UUChoose Prob UStatement UStatement
   | UUUniAssign String UExpression
+  deriving (Show)
 
 uUpdateStatement :: UUpdateLanguage -> Store -> Dist Store
 uUpdateStatement (UURet s) store = return $ uExecute s store
@@ -201,6 +203,7 @@ data UConditionLanguage
   = UCRet UExpression
   | UCUni [UExpression]
   | UCChoose Prob UExpression UExpression
+  deriving (Show)
 
 literalToBool :: Literal -> Bool
 literalToBool (B b) = b
@@ -220,6 +223,7 @@ data UObserveLanguage
   = UORet UExpression
   | UOUni UExpression
   | UOChoose Prob UExpression UExpression
+  deriving (Show)
 
 uObservation :: UObserveLanguage -> Store -> Dist Literal
 uObservation (UORet e) store = return $ calcSolution e store

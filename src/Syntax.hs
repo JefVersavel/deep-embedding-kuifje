@@ -45,6 +45,7 @@ data UBobby
   | UIf UConditionLanguage UBobby UBobby UBobby
   | UWhile UConditionLanguage UBobby UBobby
   | UObserve UObserveLanguage UBobby
+  deriving (Show)
 
 instance Semigroup UBobby where
   USkip <> k = k
