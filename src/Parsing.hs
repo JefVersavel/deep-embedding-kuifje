@@ -167,7 +167,7 @@ elemParser = do
 listOpParser :: Parser ListOp
 listOpParser =
   do
-    string "\\" >> return LDiv
+    char 'D' >> return LDiv
     <|> (char 'U' >> return Union)
     <|> (char 'I' >> return Intersect)
     <|> (string "++" >> return Concat)
@@ -398,18 +398,27 @@ updateStatementParser = do
   UUpdate u <$> endParser
 
 ifParser :: Parser UBobby
-ifParser = do
-  string "if"
-  spaces
-  b <- bracketsParser conditionParser
-  spaces
-  l <- curlyParser bobbyParser
-  spaces
-  string "else"
-  spaces
-  r <- curlyParser bobbyParser
-  spaces
-  UIf b l r <$> curlyEndParser
+ifParser =
+  do
+    string "if"
+    spaces
+    b <- bracketsParser conditionParser
+    spaces
+    l <- curlyParser bobbyParser
+    spaces
+    ( ( do
+          string "else"
+          spaces
+          r <- curlyParser bobbyParser
+          spaces
+          UIf b l r <$> curlyEndParser
+      )
+        <|> ( do
+                char ';'
+                spaces
+                UIf b l USkip <$> bobbyParser
+            )
+      )
 
 whileParser :: Parser UBobby
 whileParser = do
