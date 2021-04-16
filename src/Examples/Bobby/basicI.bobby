@@ -1,0 +1,9 @@
+update (return (l = i[]))
+update (return (i = 0))
+update (return (ans = true))
+while (return (&& ans (< i n))) {
+  if (return (!= (!! pw i) (!! gs i))) {
+    update (return (ans = false));
+  };
+  update (return (i = (+ i 1)));
+}

@@ -22,8 +22,7 @@ makeState pw gs =
       [ ("pw", toLiteral pw),
         ("gs", toLiteral gs),
         ("l", L $ ILst []),
-        ("i", I 0),
-        ("ans", B True)
+        ("n", I $ length pw)
       ]
 
 projectPw :: Dist (Dist Store) -> Dist (Dist Literal)
@@ -31,6 +30,9 @@ projectPw = fmap (fmap (fromJust . lookup "pw" . runStore))
 
 initialDist :: String -> String -> Dist Store
 initialDist pw gs = uniform [makeState pw' gs | pw' <- permutations pw]
+
+initialDist' :: String -> String -> Dist Store
+initialDist' pw gs = uniform [makeState pw' gs | pw' <- permutations pw]
 
 basicI :: Int -> UBobby
 basicI n =

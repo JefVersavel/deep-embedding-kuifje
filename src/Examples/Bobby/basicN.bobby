@@ -1,0 +1,8 @@
+update (return (l = i[]))
+update (return (i = 0))
+update (return (ans = true))
+while (return (< i n)) {
+  update (return (ans = (&& ans (== (!! pw i) (!! gs i)))))
+  update (return (i = (+ i 1)));
+}
+observe (return ans);

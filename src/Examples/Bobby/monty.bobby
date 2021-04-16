@@ -1,0 +1,3 @@
+update (return (chosenDoor = 'a'))
+update (uniform [door = d | d <- "abc"])
+observe (uniform (D "abc" [door, chosenDoor]));

@@ -1,0 +1,12 @@
+update (return (l = i[]))
+update (return (i = 0))
+update (return (ans = true))
+update (return (l = [0 .. (- n 1)]))
+while (return (&& ans (!= l i[]))) {
+  update (uniform [i = x | x <- l])
+  if (return (!= (!! pw i) (!! gs i))) {
+    update (return (ans = false));
+  };
+  update (return (l = (D l [i])));
+}
+observe (return ans);

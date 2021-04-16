@@ -2,6 +2,7 @@ module Examples.Test where
 
 import Data.Map
 import Examples.UMonty
+import Examples.UPassword
 import Examples.UReadMeExample
 import Examples.USideChannel
 import Language.Kuifje.Distribution
@@ -16,13 +17,16 @@ import Prelude hiding (return)
 em = return $ Store empty
 
 p = do
-  file <- readFile "./Bobby/sideChannel235.bobby"
+  file <- readFile "./Bobby/basicS.bobby"
   let e = parse bobbyParser "" file
-  print e
   case e of
     Right ex -> do
-      print $ exponentiation [2, 3, 5]
+      print $ basicS 3
       print ex
-      print uhyper235
-      print $ sideProject $ uHysemBobby ex em
+      print $ uhyperS "abc" "abc"
+      print $
+        projectPw $
+          uHysemBobby
+            ex
+            (initialDist' "abc" "abc")
     Left m -> print m

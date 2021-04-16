@@ -1,0 +1,13 @@
+update (uniform [exp = e | e <- [0 .. 15]])
+update (return (base = 6))
+update (return (e = exp))
+update (return (p = 1))
+while (return (!= e 0)) {
+  update (uniform [d = x | x <- [2]])
+  if (return (!= (mod e d) 0)){
+    update (return (p = (^ (* p base) (mod e d))))
+    update (return (e = (- e (mod e d))));
+  };
+  update (return (base = (^ base d)))
+  update (return (e = (/ e d)));
+}
