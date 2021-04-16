@@ -40,6 +40,7 @@ instance Show (Expression a) where
   show (ListCalc o l r) = show l ++ show o ++ show r
   show (ToList l) = show l
 
+-- the evaluation function that returns the same type as the expression has
 eval :: ToType a => Expression a -> Store -> a
 eval (Var s) store = case lookup s (runStore store) of
   Just lit -> toType lit
