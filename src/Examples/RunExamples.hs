@@ -1,5 +1,7 @@
 module Examples.RunExamples where
 
+import Data.Either
+import Data.Map
 import Examples.Monty
 import Examples.Password
 import Examples.ReadMeExample
@@ -9,14 +11,21 @@ import Examples.UMonty
 import Examples.UPassword
 import Examples.UReadMeExample
 import Examples.USideChannel
+import Language.Kuifje.Distribution
+import Parsing
+import Semantics
+import State
+import Text.ParserCombinators.Parsec
+import Prelude hiding (return)
+
+em = return $ Store empty
 
 mainTest = do
   print "ReadMeExample"
   print hyper
   print "UReadMeExample"
   print uhyper
-  print "ReadMeExampleKuifje"
-  print hyperKuifje
+  readme <- readFile "./Bobby/readMeExample.bobby"
   print "SideChannel"
   print "hyper2"
   print hyper2
