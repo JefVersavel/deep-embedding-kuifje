@@ -6,4 +6,4 @@ while (return (< i n)) {
     update (return (ans = false));
   };
   update (return (i = (+ i 1)));
-}
+};

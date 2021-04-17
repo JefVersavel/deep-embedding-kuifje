@@ -301,9 +301,9 @@ uniAssignUpdateParser = do
 updateParser :: Parser UUpdateLanguage
 updateParser = do
   returnUpdateParser
-    <|> (try uniformUpdateParser)
+    <|> try uniformUpdateParser
     <|> chooseUpdateParser
-    <|> (try uniAssignUpdateParser)
+    <|> try uniAssignUpdateParser
 
 returnConditionParser :: Parser UConditionLanguage
 returnConditionParser = do
@@ -373,21 +373,15 @@ curlyParser parser = do
   return p
 
 skipParser :: Parser UBobby
-skipParser = do
-  string "skip"
-  return USkip
-
-endParser :: Parser UBobby
-endParser =
-  do
-    char ';' >> return USkip
-    <|> (spaces >> bobbyParser)
-
-curlyEndParser :: Parser UBobby
-curlyEndParser =
-  do
-    try (many space >> eof >> return USkip)
-    <|> try (spaces >> spaces >> bobbyParser)
+skipParser =
+  ( do
+      string "skip"
+      return USkip
+  )
+    <|> ( do
+            char ';'
+            return USkip
+        )
 
 updateStatementParser :: Parser UBobby
 updateStatementParser = do
@@ -395,7 +389,7 @@ updateStatementParser = do
   spaces
   u <- bracketsParser updateParser
   spaces
-  UUpdate u <$> endParser
+  UUpdate u <$> bobbyParser
 
 ifParser :: Parser UBobby
 ifParser =
@@ -406,19 +400,18 @@ ifParser =
     spaces
     l <- curlyParser bobbyParser
     spaces
-    ( ( do
-          string "else"
-          spaces
-          r <- curlyParser bobbyParser
-          spaces
-          UIf b l r <$> curlyEndParser
+    ( do
+        string "else"
+        spaces
+        r <- curlyParser bobbyParser
+        spaces
+        UIf b l r <$> bobbyParser
       )
-        <|> ( do
-                char ';'
-                spaces
-                UIf b l USkip <$> bobbyParser
-            )
-      )
+      <|> ( do
+              r <- skipParser
+              spaces
+              UIf b l USkip <$> bobbyParser
+          )
 
 whileParser :: Parser UBobby
 whileParser = do
@@ -428,7 +421,7 @@ whileParser = do
   spaces
   l <- curlyParser bobbyParser
   spaces
-  UWhile b l <$> curlyEndParser
+  UWhile b l <$> bobbyParser
 
 observeParser :: Parser UBobby
 observeParser = do
@@ -436,7 +429,7 @@ observeParser = do
   many1 space
   e <- bracketsParser observationParser
   spaces
-  UObserve e <$> endParser
+  UObserve e <$> bobbyParser
 
 bobbyParser :: Parser UBobby
 bobbyParser =

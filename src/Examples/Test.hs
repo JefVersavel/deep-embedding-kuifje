@@ -17,16 +17,10 @@ import Prelude hiding (return)
 em = return $ Store empty
 
 p = do
-  file <- readFile "./Bobby/basicS.bobby"
+  file <- readFile "./Bobby/sideChannel2.bobby"
   let e = parse bobbyParser "" file
   case e of
     Right ex -> do
-      print $ basicS 3
       print ex
-      print $ uhyperS "abc" "abc"
-      print $
-        projectPw $
-          uHysemBobby
-            ex
-            (initialDist' "abc" "abc")
+      print $ sideProject $ uHysemBobby ex em
     Left m -> print m
