@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: e86c6e6ca330d0f17fd6097e0b8071057a636d3669e7a366544b170554afedde
+-- hash: 28c25765a81d16b86f6b0d69cc6c6845608563f61989842be5c14faa6588634c
 
 name:           deep-embedding-kuifje
 version:        0.1.0.0
@@ -58,7 +58,6 @@ library
       Syntax
       Type
       TypeCheck
-      TypeCheckers
   other-modules:
       Paths_deep_embedding_kuifje
   hs-source-dirs:
